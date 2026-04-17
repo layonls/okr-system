@@ -404,11 +404,11 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                             <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 flex flex-col items-start gap-4">
                                 <div class="w-12 h-12 bg-green-500/20 text-green-400 rounded-lg flex items-center justify-center shrink-0">
-                                    <i class="ph ph-microsoft-excel-logo text-2xl"></i>
+                                    <i class="ph ph-google-logo text-2xl"></i>
                                 </div>
                                 <div>
                                     <h3 class="text-white font-medium mb-1">1. Baixar Modelo</h3>
-                                    <p class="text-xs text-gray-400 mb-4 h-8">Baixe o CSV padrão para preencher no Google Sheets ou Excel.</p>
+                                    <p class="text-xs text-gray-400 mb-4 h-8">Baixe o CSV padrão com a formatação correta para abrir no Google Planilhas.</p>
                                     <button onclick="downloadCsvTemplate()" class="bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition border border-gray-600 shadow-md">
                                         <i class="ph ph-download-simple mb-0.5"></i> Baixar Planilha CSV
                                     </button>
@@ -422,9 +422,9 @@
                                 </div>
                                 <div>
                                     <h3 class="text-white font-medium mb-1">2. Enviar Planilha</h3>
-                                    <p class="text-xs text-gray-400 mb-4 h-8" id="upload-csv-label">Clique ou arraste o arquivo preenchido (.csv).</p>
+                                    <p class="text-xs text-gray-400 mb-4 h-8" id="upload-csv-label">Baixe em 'Arquivo > Fazer download > CSV' no Google Planilhas e envie aqui.</p>
                                     <button class="bg-primary-600 hover:bg-primary-500 text-white text-sm font-medium py-2 px-4 rounded-lg transition border border-primary-500 relative z-0 shadow-md w-full">
-                                        Selecionar CSV
+                                        Selecionar CSV do Planilhas
                                     </button>
                                 </div>
                             </div>
@@ -456,6 +456,131 @@
             
             <button onclick="saveKRUpdate()" class="w-full py-3 rounded-lg bg-primary-600 hover:bg-primary-500 text-white font-medium transition">
                 Salvar Atualização
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para editar KR (Configs) -->
+    <div id="modal-edit-krconfig" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex-col items-center justify-center">
+        <div class="glass-card w-[600px] p-8 rounded-2xl animate-[fadeIn_0.3s_ease]">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-white">Editar Key Result</h3>
+                <button onclick="closeEditKRModal()" class="text-gray-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
+            </div>
+            
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Título da Key Result</label>
+                    <input type="text" id="edit-kr-name" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary-500 transition text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Base Inicial</label>
+                        <input type="number" step="any" id="edit-kr-base" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary-500 transition text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Meta (Target)</label>
+                        <input type="number" step="any" id="edit-kr-target" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary-500 transition text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Cálculo</label>
+                        <select id="edit-kr-calculation" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary-500 transition text-sm">
+                            <option value="sum">Soma (acumulada)</option>
+                            <option value="avg">Média</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Direção</label>
+                        <select id="edit-kr-measurement" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary-500 transition text-sm">
+                            <option value="increase">↑ Aumentar</option>
+                            <option value="decrease">↓ Reduzir</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="saveEditKRConfig()" class="w-full py-3 rounded-lg bg-primary-600 hover:bg-primary-500 text-white font-medium transition">
+                Salvar Alterações
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para editar Objetivo -->
+    <div id="modal-edit-obj" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex-col items-center justify-center">
+        <div class="glass-card w-[600px] p-8 rounded-2xl animate-[fadeIn_0.3s_ease]">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-white">Editar Objetivo</h3>
+                <button onclick="closeEditObjModal()" class="text-gray-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
+            </div>
+            
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Título do Objetivo</label>
+                    <input type="text" id="edit-obj-name" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary-500 transition text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Responsável</label>
+                    <input type="text" id="edit-obj-owner" placeholder="Nome do Responsável" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary-500 transition text-sm">
+                </div>
+            </div>
+            
+            <button onclick="saveEditObj()" class="w-full py-3 rounded-lg bg-primary-600 hover:bg-primary-500 text-white font-medium transition">
+                Salvar Alterações
+            </button>
+        </div>
+    </div>
+
+    <!-- Modal para adicionar KR em Objetivo Existente -->
+    <div id="modal-add-kr-existing" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex-col items-center justify-center">
+        <div class="glass-card w-[600px] p-8 rounded-2xl animate-[fadeIn_0.3s_ease]">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-white">Adicionar Key Result</h3>
+                <button onclick="closeAddKRExistingModal()" class="text-gray-400 hover:text-white"><i class="ph ph-x text-2xl"></i></button>
+            </div>
+            
+            <p id="add-kr-existing-target-name" class="text-gray-400 mb-4 text-sm italic border-b border-gray-700 pb-2"></p>
+            
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Título da Key Result</label>
+                    <input type="text" id="add-kr-name" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary-500 transition text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Base Inicial</label>
+                        <input type="number" step="any" id="add-kr-base" value="0" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary-500 transition text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Meta (Target)</label>
+                        <input type="number" step="any" id="add-kr-target" value="100" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary-500 transition text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Cálculo</label>
+                        <select id="add-kr-calculation" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary-500 transition text-sm">
+                            <option value="sum">Soma (acumulada)</option>
+                            <option value="avg">Média</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1">Direção</label>
+                        <select id="add-kr-measurement" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary-500 transition text-sm">
+                            <option value="increase">↑ Aumentar</option>
+                            <option value="decrease">↓ Reduzir</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs text-gray-400 mb-1">Frequência de Medição</label>
+                        <select id="add-kr-frequency" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-primary-500 transition text-sm">
+                            <option value="monthly">Mensal</option>
+                            <option value="quarterly">Trimestral</option>
+                            <option value="annual">Anual</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="saveAddKRExisting()" class="w-full py-3 rounded-lg bg-green-600 hover:bg-green-500 text-white font-medium transition">
+                Adicionar Key Result
             </button>
         </div>
     </div>

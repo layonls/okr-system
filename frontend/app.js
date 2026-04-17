@@ -318,7 +318,8 @@ function renderDashboard() {
                         <div class="flex items-center gap-2">
                             <h3 class="text-xl font-semibold text-white tracking-tight">${globalObj.name}</h3>
                             <div class="flex items-center gap-1 opacity-0 group-hover/gobj:opacity-100 transition-opacity">
-                                <button onclick="event.stopPropagation(); editObjectivePrompt('${globalObj.id}', '${globalObj.name.replace(/'/g, "\\'")}')" class="p-1 text-gray-500 hover:text-blue-400 rounded transition" title="Editar Título"><i class="ph ph-pencil-simple"></i></button>
+                                <button onclick="event.stopPropagation(); editObjectivePrompt('${globalObj.id}')" class="p-1 text-gray-500 hover:text-blue-400 rounded transition" title="Editar Objetivo"><i class="ph ph-pencil-simple"></i></button>
+                                <button onclick="event.stopPropagation(); openAddKRExistingModal('${globalObj.id}', 'global', '${globalObj.name.replace(/'/g, "\\'")}')" class="p-1 text-green-500 hover:text-green-400 rounded transition" title="Adicionar Nova KR ao Objetivo"><i class="ph ph-plus-circle"></i></button>
                                 <button onclick="event.stopPropagation(); deleteObjective('${globalObj.id}')" class="p-1 text-gray-500 hover:text-red-400 rounded transition" title="Excluir Objetivo Global e Vinculados"><i class="ph ph-trash"></i></button>
                             </div>
                         </div>
@@ -390,7 +391,8 @@ function renderDashboard() {
                         <h4 class="text-lg text-white font-semibold tracking-tight">${qObj.name}</h4>
                         ${!isTvMode ? `
                         <div class="ml-2 flex items-center gap-1 opacity-0 group-hover/qobj:opacity-100 transition-opacity">
-                            <button onclick="event.stopPropagation(); editObjectivePrompt('${qObj.id}', '${qObj.name.replace(/'/g, "\\'")}')" class="p-1.5 text-gray-400 hover:text-blue-400 rounded-lg hover:bg-gray-700 transition" title="Editar Título"><i class="ph ph-pencil-simple"></i></button>
+                            <button onclick="event.stopPropagation(); editObjectivePrompt('${qObj.id}')" class="p-1.5 text-gray-400 hover:text-blue-400 rounded-lg hover:bg-gray-700 transition" title="Editar Objetivo"><i class="ph ph-pencil-simple"></i></button>
+                            <button onclick="event.stopPropagation(); openAddKRExistingModal('${qObj.id}', 'quarterly', '${qObj.name.replace(/'/g, "\\'")}', '${qObj.global_id}')" class="p-1.5 text-green-500 hover:text-green-400 rounded-lg hover:bg-gray-700 transition" title="Adicionar Nova KR ao Trimestre"><i class="ph ph-plus-circle"></i></button>
                             <button onclick="event.stopPropagation(); deleteObjective('${qObj.id}')" class="p-1.5 text-gray-400 hover:text-red-400 rounded-lg hover:bg-gray-700 transition" title="Excluir Objetivo Trimestral"><i class="ph ph-trash"></i></button>
                         </div>
                         ` : ''}
@@ -736,11 +738,11 @@ function setupForms() {
 // ----------------------------------------------------
 
 function downloadCsvTemplate() {
-    const csvContent = "\uFEFFTipo,Título,Responsável,Ano,Objetivo Global Vinculado,Trimestre,KR Nome,Base,Meta,Cálculo,Direção,Frequência\n" +
-        "Global,Chegar a dezenas de milhões,João Silva,2026,,,Aumentar receita LTV,0,10,sum,increase,monthly\n" + 
-        "Global,Chegar a dezenas de milhões,João Silva,2026,,,Reduzir cancelamentos,15,5,avg,decrease,monthly\n" + 
-        "Trimestral,Triplicar Vendas Q1,Maria Souza,2026,Chegar a dezenas de milhões,Q1,Vender 3 milhões,0,3,sum,increase,monthly\n" +
-        "Trimestral,Triplicar Vendas Q1,Maria Souza,2026,Chegar a dezenas de milhões,Q1,Fechar 50 contratos,0,50,sum,increase,monthly\n";
+    const csvContent = "\uFEFFTipo;Título;Responsável;Ano;Objetivo Global Vinculado;Trimestre;KR Nome;Base;Meta;Cálculo;Direção;Frequência\n" +
+        "Global;Chegar a dezenas de milhões;João Silva;2026;;;Aumentar receita LTV;0;10;sum;increase;monthly\n" + 
+        "Global;Chegar a dezenas de milhões;João Silva;2026;;;Reduzir cancelamentos;15;5;avg;decrease;monthly\n" + 
+        "Trimestral;Triplicar Vendas Q1;Maria Souza;2026;Chegar a dezenas de milhões;Q1;Vender 3 milhões;0;3;sum;increase;monthly\n" +
+        "Trimestral;Triplicar Vendas Q1;Maria Souza;2026;Chegar a dezenas de milhões;Q1;Fechar 50 contratos;0;50;sum;increase;monthly\n";
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -1015,36 +1017,189 @@ async function deleteObjective(id) {
     }
 }
 
-async function editKRPrompt(id, oldName) {
-    const newName = prompt("Editar Título da Key Result:", oldName);
-    if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
-        try {
-            const res = await fetch(`${API_URL}/krs/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: newName.trim() })
-            });
-            if (res.ok) {
-                showToast('✅ Título da KR atualizado.');
-                fetchData();
-            }
-        } catch (e) { console.error(e); }
+let editingKRConfigId = null;
+
+function editKRPrompt(id, currentName) {
+    const kr = rawData.key_results.find(k => k.id === id);
+    if (!kr) return;
+    
+    editingKRConfigId = id;
+    
+    document.getElementById('edit-kr-name').value = kr.name || '';
+    document.getElementById('edit-kr-base').value = kr.base_value || '0';
+    document.getElementById('edit-kr-target').value = kr.target_value || '100';
+    document.getElementById('edit-kr-calculation').value = kr.calculation || 'sum';
+    document.getElementById('edit-kr-measurement').value = kr.measurement || 'increase';
+
+    document.getElementById('modal-edit-krconfig').classList.remove('hidden');
+    document.getElementById('modal-edit-krconfig').classList.add('flex');
+}
+
+function closeEditKRModal() {
+    document.getElementById('modal-edit-krconfig').classList.add('hidden');
+    document.getElementById('modal-edit-krconfig').classList.remove('flex');
+    editingKRConfigId = null;
+}
+
+async function saveEditKRConfig() {
+    if (!editingKRConfigId) return;
+
+    const payload = {
+        name: document.getElementById('edit-kr-name').value.trim(),
+        base_value: document.getElementById('edit-kr-base').value,
+        target_value: document.getElementById('edit-kr-target').value,
+        calculation: document.getElementById('edit-kr-calculation').value,
+        measurement: document.getElementById('edit-kr-measurement').value
+    };
+
+    if (!payload.name) {
+        showToast('⚠️ O nome da KR não pode ficar vazio.', 'warn');
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/krs/${editingKRConfigId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            showToast('✅ Key Result atualizada com sucesso!');
+            closeEditKRModal();
+            fetchData();
+        } else {
+            showToast('❌ Erro ao atualizar KR.', 'error');
+        }
+    } catch (e) { 
+        console.error(e); 
+        showToast('❌ Erro ao comunicar com o servidor.', 'error');
     }
 }
 
-async function editObjectivePrompt(id, oldName) {
-    const newName = prompt("Editar Título do Objetivo:", oldName);
-    if (newName && newName.trim() !== "" && newName.trim() !== oldName) {
-        try {
-            const res = await fetch(`${API_URL}/objectives/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: newName.trim() })
-            });
-            if (res.ok) {
-                showToast('✅ Título do Objetivo atualizado.');
-                fetchData();
-            }
-        } catch (e) { console.error(e); }
+let editingObjId = null;
+
+function editObjectivePrompt(id) {
+    const obj = rawData.objectives.find(o => o.id === id);
+    if (!obj) return;
+    
+    editingObjId = id;
+    document.getElementById('edit-obj-name').value = obj.name || '';
+    document.getElementById('edit-obj-owner').value = obj.owner || '';
+
+    document.getElementById('modal-edit-obj').classList.remove('hidden');
+    document.getElementById('modal-edit-obj').classList.add('flex');
+}
+
+function closeEditObjModal() {
+    document.getElementById('modal-edit-obj').classList.add('hidden');
+    document.getElementById('modal-edit-obj').classList.remove('flex');
+    editingObjId = null;
+}
+
+async function saveEditObj() {
+    if (!editingObjId) return;
+
+    const payload = {
+        name: document.getElementById('edit-obj-name').value.trim(),
+        owner: document.getElementById('edit-obj-owner').value.trim()
+    };
+
+    if (!payload.name) {
+        showToast('⚠️ O título do objetivo não pode ficar vazio.', 'warn');
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/objectives/${editingObjId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            showToast('✅ Objetivo atualizado com sucesso!');
+            closeEditObjModal();
+            fetchData();
+        } else {
+            showToast('❌ Erro ao atualizar Objetivo.', 'error');
+        }
+    } catch (e) { 
+        console.error(e); 
+        showToast('❌ Erro ao comunicar com o servidor.', 'error'); 
+    }
+}
+
+// === ADICIONAR KR A UM OBJETIVO EXISTENTE VAI DIRETAMENTE ==================
+
+let addKRTargetObjId = null;
+let addKRTargetObjType = null; // 'global' ou 'quarterly'
+let addKRTargetGlobalParentId = null; // Apenas usado se o target for trimestral
+
+function openAddKRExistingModal(objId, objType, objName, globalParentId = null) {
+    addKRTargetObjId = objId;
+    addKRTargetObjType = objType;
+    addKRTargetGlobalParentId = globalParentId;
+    
+    document.getElementById('add-kr-existing-target-name').innerText = `Vinculando a: ${objName}`;
+    
+    // reset form
+    document.getElementById('add-kr-name').value = '';
+    document.getElementById('add-kr-base').value = '0';
+    document.getElementById('add-kr-target').value = '100';
+    document.getElementById('add-kr-calculation').value = 'sum';
+    document.getElementById('add-kr-measurement').value = 'increase';
+    document.getElementById('add-kr-frequency').value = 'monthly';
+
+    document.getElementById('modal-add-kr-existing').classList.remove('hidden');
+    document.getElementById('modal-add-kr-existing').classList.add('flex');
+}
+
+function closeAddKRExistingModal() {
+    document.getElementById('modal-add-kr-existing').classList.add('hidden');
+    document.getElementById('modal-add-kr-existing').classList.remove('flex');
+    addKRTargetObjId = null;
+}
+
+async function saveAddKRExisting() {
+    if (!addKRTargetObjId) return;
+
+    const payload = {
+        name: document.getElementById('add-kr-name').value.trim(),
+        base_value: document.getElementById('add-kr-base').value,
+        target_value: document.getElementById('add-kr-target').value,
+        calculation: document.getElementById('add-kr-calculation').value,
+        measurement: document.getElementById('add-kr-measurement').value,
+        frequency: document.getElementById('add-kr-frequency').value
+    };
+
+    if (!payload.name) {
+        showToast('⚠️ O título da KR não pode ficar vazio.', 'warn');
+        return;
+    }
+
+    if (addKRTargetObjType === 'global') {
+        payload.global_id = addKRTargetObjId;
+        payload.quarterly_id = "";
+    } else {
+        // Se for trimestral, a KR tem que receber o trimestral id E o global id que gerou esse KR.
+        payload.quarterly_id = addKRTargetObjId;
+        payload.global_id = addKRTargetGlobalParentId || "";
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/krs`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            showToast('✅ Key Result adicionada com sucesso!');
+            closeAddKRExistingModal();
+            fetchData();
+        } else {
+            showToast('❌ Erro ao adicionar KR.', 'error');
+        }
+    } catch (e) { 
+        console.error(e); 
+        showToast('❌ Erro de conexão com o servidor.', 'error');
     }
 }
