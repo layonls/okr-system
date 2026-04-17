@@ -9,6 +9,6 @@ COPY . .
 # Wait, we need to run it from backend directory or ensure module paths match.
 # In server.py we used __file__ so it should be fine.
 
-EXPOSE 8000
+EXPOSE 80
 
 CMD ["python", "backend/server.py"]

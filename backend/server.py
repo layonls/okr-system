@@ -3,7 +3,7 @@ import socketserver
 import json
 import os
 
-PORT = 8000
+PORT = 80
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_DIR = os.path.join(os.path.dirname(BASE_DIR), "frontend")
 DB_FILE = os.path.join(BASE_DIR, "db.json")
