@@ -135,7 +135,7 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         if self.path.startswith('/api/krs/'):
             kr_id = self.path.split('/')[-1]
             original_len = len(data['key_results'])
-            data['key_results'] = [k for k in data['key_results'] if k['id'] != kr_id]
+            data['key_results'] = [k for k in data['key_results'] if str(k.get('id', '')) != kr_id]
             
             if len(data['key_results']) < original_len:
                 save_data(data)
@@ -150,9 +150,9 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         elif self.path.startswith('/api/objectives/'):
             obj_id = self.path.split('/')[-1]
             original_len = len(data['objectives'])
-            data['objectives'] = [o for o in data['objectives'] if o['id'] != obj_id]
-            data['key_results'] = [k for k in data['key_results'] if k.get('global_id') != obj_id and k.get('quarterly_id') != obj_id]
-            data['objectives'] = [o for o in data['objectives'] if o.get('global_id') != obj_id]
+            data['objectives'] = [o for o in data['objectives'] if str(o.get('id', '')) != obj_id]
+            data['key_results'] = [k for k in data['key_results'] if str(k.get('global_id', '')) != obj_id and str(k.get('quarterly_id', '')) != obj_id]
+            data['objectives'] = [o for o in data['objectives'] if str(o.get('global_id', '')) != obj_id]
             
             if len(data['objectives']) < original_len:
                 save_data(data)

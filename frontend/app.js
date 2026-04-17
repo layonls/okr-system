@@ -317,9 +317,9 @@ function renderDashboard() {
                         <span class="text-[10px] font-bold uppercase tracking-wider text-primary-400">Objetivo Global</span>
                         <div class="flex items-center gap-2">
                             <h3 class="text-xl font-semibold text-white tracking-tight">${globalObj.name}</h3>
-                            <div class="flex items-center gap-1 opacity-0 group-hover/gobj:opacity-100 transition-opacity" onclick="event.stopPropagation()">
-                                <button onclick="editObjectivePrompt('${globalObj.id}', '${globalObj.name.replace(/'/g, "\\'")}')" class="p-1 text-gray-500 hover:text-blue-400 rounded transition" title="Editar Título"><i class="ph ph-pencil-simple"></i></button>
-                                <button onclick="deleteObjective('${globalObj.id}')" class="p-1 text-gray-500 hover:text-red-400 rounded transition" title="Excluir Objetivo Global e Vinculados"><i class="ph ph-trash"></i></button>
+                            <div class="flex items-center gap-1 opacity-0 group-hover/gobj:opacity-100 transition-opacity">
+                                <button onclick="event.stopPropagation(); editObjectivePrompt('${globalObj.id}', '${globalObj.name.replace(/'/g, "\\'")}')" class="p-1 text-gray-500 hover:text-blue-400 rounded transition" title="Editar Título"><i class="ph ph-pencil-simple"></i></button>
+                                <button onclick="event.stopPropagation(); deleteObjective('${globalObj.id}')" class="p-1 text-gray-500 hover:text-red-400 rounded transition" title="Excluir Objetivo Global e Vinculados"><i class="ph ph-trash"></i></button>
                             </div>
                         </div>
                     </div>
@@ -390,8 +390,8 @@ function renderDashboard() {
                         <h4 class="text-lg text-white font-semibold tracking-tight">${qObj.name}</h4>
                         ${!isTvMode ? `
                         <div class="ml-2 flex items-center gap-1 opacity-0 group-hover/qobj:opacity-100 transition-opacity">
-                            <button onclick="editObjectivePrompt('${qObj.id}', '${qObj.name.replace(/'/g, "\\'")}')" class="p-1.5 text-gray-400 hover:text-blue-400 rounded-lg hover:bg-gray-700 transition" title="Editar Título" event.stopPropagation()><i class="ph ph-pencil-simple"></i></button>
-                            <button onclick="deleteObjective('${qObj.id}')" class="p-1.5 text-gray-400 hover:text-red-400 rounded-lg hover:bg-gray-700 transition" title="Excluir Objetivo Trimestral" event.stopPropagation()><i class="ph ph-trash"></i></button>
+                            <button onclick="event.stopPropagation(); editObjectivePrompt('${qObj.id}', '${qObj.name.replace(/'/g, "\\'")}')" class="p-1.5 text-gray-400 hover:text-blue-400 rounded-lg hover:bg-gray-700 transition" title="Editar Título"><i class="ph ph-pencil-simple"></i></button>
+                            <button onclick="event.stopPropagation(); deleteObjective('${qObj.id}')" class="p-1.5 text-gray-400 hover:text-red-400 rounded-lg hover:bg-gray-700 transition" title="Excluir Objetivo Trimestral"><i class="ph ph-trash"></i></button>
                         </div>
                         ` : ''}
                     </div>
