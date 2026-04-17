@@ -333,11 +333,11 @@ function renderDashboard() {
                     <div class="bg-gray-800 rounded-full overflow-hidden w-32 h-3">
                         <div class="bg-primary-500 rounded-full progress-bar shadow-[0_0_10px_rgba(0,87,168,0.6)] h-full" style="width: ${Math.min(globalAvgProgress, 100)}%"></div>
                     </div>
-                    <i class="ph ph-caret-down text-gray-400 transition-transform duration-300" id="icon-${globalObj.id}"></i>
+                    <i class="ph ph-caret-down text-gray-400 transition-transform duration-300" id="icon-${globalObj.id}" style="${openAccordions.has('acc-'+globalObj.id) ? 'transform: rotate(180deg)' : 'transform: rotate(0deg)'}"></i>
                 </div>
             </div>
             
-            <div id="acc-${globalObj.id}" class="hidden border-t border-gray-700/50 bg-gray-900/50 p-6">
+            <div id="acc-${globalObj.id}" class="${openAccordions.has('acc-'+globalObj.id) ? '' : 'hidden '}border-t border-gray-700/50 bg-gray-900/50 p-6">
                 <div class="space-y-4" id="qo-container-${globalObj.id}"></div>
             </div>
         `;
@@ -546,15 +546,19 @@ function renderKRChart(canvasId, kr, validMonths) {
     });
 }
 
+let openAccordions = new Set();
+
 function toggleAccordion(id) {
     const el = document.getElementById(id);
     const icon = document.getElementById('icon-' + id.replace('acc-', ''));
     if (el.classList.contains('hidden')) {
         el.classList.remove('hidden');
-        icon.style.transform = 'rotate(180deg)';
+        if (icon) icon.style.transform = 'rotate(180deg)';
+        openAccordions.add(id);
     } else {
         el.classList.add('hidden');
-        icon.style.transform = 'rotate(0deg)';
+        if (icon) icon.style.transform = 'rotate(0deg)';
+        openAccordions.delete(id);
     }
 }
 
