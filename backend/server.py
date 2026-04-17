@@ -6,7 +6,11 @@ import os
 PORT = 80
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_DIR = os.path.join(os.path.dirname(BASE_DIR), "frontend")
-DB_FILE = os.path.join(BASE_DIR, "db.json")
+
+# O volume será montado neste diretório de data
+DATA_DIR = os.path.join(os.path.dirname(BASE_DIR), "data")
+os.makedirs(DATA_DIR, exist_ok=True)
+DB_FILE = os.path.join(DATA_DIR, "db.json")
 
 def load_data():
     if not os.path.exists(DB_FILE):
