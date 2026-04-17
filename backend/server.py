@@ -5,21 +5,23 @@ import os
 
 PORT = 8000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_DIR = os.path.join(os.path.dirname(BASE_DIR), "frontend")
 DB_FILE = os.path.join(BASE_DIR, "db.json")
 
-# Helper function to load data
 def load_data():
     if not os.path.exists(DB_FILE):
         return {"objectives": [], "key_results": []}
     with open(DB_FILE, "r") as f:
         return json.load(f)
 
-# Helper function to save data
 def save_data(data):
     with open(DB_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
 class RequestHandler(http.server.SimpleHTTPRequestHandler):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, directory=FRONTEND_DIR, **kwargs)
+
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
@@ -37,13 +39,15 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps(data).encode())
-        else:
+        elif self.path.startswith('/api/'):
             self.send_response(404)
             self.end_headers()
+        else:
+            super().do_GET()
 
     def do_POST(self):
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
+        content_length = int(self.headers.get('Content-Length', 0))
+        post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
         body = json.loads(post_data.decode('utf-8'))
         
         data = load_data()
@@ -63,7 +67,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             new_id = str(len(data['key_results']) + 1)
             body['id'] = new_id
             
-            # Default empty months if not provided
             months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
             for m in months:
                 if m not in body:
@@ -81,8 +84,8 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
 
     def do_PUT(self):
-        content_length = int(self.headers['Content-Length'])
-        put_data = self.rfile.read(content_length)
+        content_length = int(self.headers.get('Content-Length', 0))
+        put_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
         body = json.loads(put_data.decode('utf-8'))
 
         data = load_data()
@@ -95,7 +98,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                     data['key_results'][i].update(body)
                     found = True
                     break
-            
             if found:
                 save_data(data)
                 self.send_response(200)
@@ -114,7 +116,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
                     data['objectives'][i].update(body)
                     found = True
                     break
-            
             if found:
                 save_data(data)
                 self.send_response(200)
@@ -149,12 +150,8 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
         elif self.path.startswith('/api/objectives/'):
             obj_id = self.path.split('/')[-1]
             original_len = len(data['objectives'])
-            # Deleta o objetivo
             data['objectives'] = [o for o in data['objectives'] if o['id'] != obj_id]
-            # Deleta as KRs e trimestrais recursivamente vinculados 
-            # (Simplificando: remove KRs vinculadas a este objetivo global ou trimestral)
             data['key_results'] = [k for k in data['key_results'] if k.get('global_id') != obj_id and k.get('quarterly_id') != obj_id]
-            # Remove objetivos trimestrais vinculados a este global
             data['objectives'] = [o for o in data['objectives'] if o.get('global_id') != obj_id]
             
             if len(data['objectives']) < original_len:
@@ -170,6 +167,6 @@ class RequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(404)
             self.end_headers()
 
-with socketserver.TCPServer(("", PORT), RequestHandler) as httpd:
-    print("Serving API on port", PORT)
+with socketserver.TCPServer(("0.0.0.0", PORT), RequestHandler) as httpd:
+    print("Serving on port", PORT)
     httpd.serve_forever()

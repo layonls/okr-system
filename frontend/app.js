@@ -1,5 +1,5 @@
 // Servidor backend local/VPS
-const API_URL = 'http://localhost:8000/api';
+const API_URL = '/api';
 let rawData = { objectives: [], key_results: [] };
 let activeKRId = null; // For the modal
 
