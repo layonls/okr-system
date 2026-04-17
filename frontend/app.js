@@ -52,23 +52,27 @@ document.addEventListener('DOMContentLoaded', () => {
 function switchTab(tabId) {
     document.getElementById('view-dashboard').classList.add('hidden');
     document.getElementById('view-cadastro').classList.add('hidden');
-    document.getElementById(`view-${tabId}`).classList.remove('hidden');
+    
+    // Safety check para o tab-import que acabou de ser adicionado no index.html
+    const viewImport = document.getElementById('view-import');
+    if (viewImport) viewImport.classList.add('hidden');
+    
+    const targetView = document.getElementById(`view-${tabId}`);
+    if (targetView) targetView.classList.remove('hidden');
 
-    // Configura classes base de botões (note que dashboard tem estruturação diferente agora)
     const btnCadastro = document.getElementById('nav-cadastro');
     const btnDashboard = document.getElementById('nav-dashboard');
+    const btnImport = document.getElementById('nav-import');
 
-    if (btnCadastro) {
-        btnCadastro.className = tabId === 'cadastro'
-            ? 'w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-primary-600/20 text-primary-400 font-medium transition-all'
-            : 'w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-700/50 text-gray-400 hover:text-white font-medium transition-all';
-    }
+    const activeClass = 'w-full flex flex-row items-center gap-3 px-3 py-3 rounded-xl bg-primary-600/20 text-primary-400 font-medium transition-all group';
+    const inactiveClass = 'w-full flex items-center justify-between px-3 py-3 rounded-xl hover:bg-gray-700/50 text-gray-400 hover:text-white font-medium transition-all group';
+    
+    const simpleActiveClass = 'w-full flex items-center gap-3 px-3 py-3 rounded-xl bg-primary-600/20 text-primary-400 font-medium transition-all';
+    const simpleInactiveClass = 'w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-700/50 text-gray-400 hover:text-white font-medium transition-all';
 
-    if (btnDashboard) {
-        btnDashboard.className = tabId === 'dashboard'
-            ? 'w-full flex items-center justify-between px-3 py-3 rounded-xl bg-primary-600/20 text-primary-400 font-medium transition-all group'
-            : 'w-full flex items-center justify-between px-3 py-3 rounded-xl hover:bg-gray-700/50 text-gray-400 hover:text-white font-medium transition-all group';
-    }
+    if (btnCadastro) btnCadastro.className = tabId === 'cadastro' ? simpleActiveClass : simpleInactiveClass;
+    if (btnDashboard) btnDashboard.className = tabId === 'dashboard' ? activeClass : inactiveClass;
+    if (btnImport) btnImport.className = tabId === 'import' ? simpleActiveClass : simpleInactiveClass;
 }
 
 function toggleSubmenu(id) {
@@ -725,6 +729,148 @@ async function saveObjectiveWithKRs() {
 function setupForms() {
     // Formulário unificado — não há listeners de submit antigos
     // A lógica está toda em saveObjectiveWithKRs()
+}
+
+// ----------------------------------------------------
+// LÓGICA DE IMPORTAÇÃO EM LOTE
+// ----------------------------------------------------
+
+function downloadCsvTemplate() {
+    const csvContent = "\uFEFFTipo,Título,Responsável,Ano,Objetivo Global Vinculado,Trimestre,KR Nome,Base,Meta,Cálculo,Direção,Frequência\n" +
+        "Global,Chegar a dezenas de milhões,João Silva,2026,,,Aumentar receita LTV,0,10,sum,increase,monthly\n" + 
+        "Global,Chegar a dezenas de milhões,João Silva,2026,,,Reduzir cancelamentos,15,5,avg,decrease,monthly\n" + 
+        "Trimestral,Triplicar Vendas Q1,Maria Souza,2026,Chegar a dezenas de milhões,Q1,Vender 3 milhões,0,3,sum,increase,monthly\n" +
+        "Trimestral,Triplicar Vendas Q1,Maria Souza,2026,Chegar a dezenas de milhões,Q1,Fechar 50 contratos,0,50,sum,increase,monthly\n";
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", "Template_Importacao_OKRs.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    document.getElementById('upload-csv-label').innerText = "Arquivo selecionado: " + file.name;
+    const statsDiv = document.getElementById('import-stats');
+    statsDiv.classList.remove('hidden');
+    statsDiv.innerHTML = '<span class="text-blue-400 font-bold"><i class="ph ph-spinner animate-spin"></i> Lendo arquivo CSV...</span>';
+
+    Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async function(results) {
+            const data = results.data;
+            await processBulkImport(data);
+        },
+        error: function(err) {
+            statsDiv.innerHTML = `<span class="text-red-400 font-bold"><i class="ph ph-warning-circle"></i> Erro ao ler CSV: ${err.message}</span>`;
+        }
+    });
+}
+
+async function processBulkImport(data) {
+    const statsDiv = document.getElementById('import-stats');
+    statsDiv.innerHTML = '<span class="text-blue-400 font-bold"><i class="ph ph-spinner animate-spin"></i> Processando importação nos servidores...</span>';
+    
+    try {
+        const objectivesMap = new Map();
+        
+        // 1. Agrupar dados por Objetivo
+        data.forEach(row => {
+            const t = row['Título']?.trim();
+            if (!t) return;
+            if (!objectivesMap.has(t)) {
+                objectivesMap.set(t, {
+                    type: row['Tipo']?.trim() === 'Trimestral' ? 'quarterly' : 'global',
+                    name: t,
+                    owner: row['Responsável']?.trim() || '',
+                    year: row['Ano']?.trim() || '2026',
+                    quarter: row['Trimestre']?.trim() || '',
+                    globalLinkStr: row['Objetivo Global Vinculado']?.trim() || '',
+                    krs: []
+                });
+            }
+            if (row['KR Nome'] && row['KR Nome'].trim() !== '') {
+                objectivesMap.get(t).krs.push({
+                    name: row['KR Nome'].trim(),
+                    base_value: row['Base']?.trim() || '0',
+                    target_value: row['Meta']?.trim() || '100',
+                    calculation: row['Cálculo']?.trim() || 'sum',
+                    measurement: row['Direção']?.trim() || 'increase',
+                    frequency: row['Frequência']?.trim() || 'monthly'
+                });
+            }
+        });
+
+        // 2. Separar Globais de Trimestrais para garantir que os links funcionem
+        const globalObjs = Array.from(objectivesMap.values()).filter(o => o.type === 'global');
+        const qObjs = Array.from(objectivesMap.values()).filter(o => o.type === 'quarterly');
+
+        let createdObjs = 0;
+        let createdKRs = 0;
+        const titleToIdMap = new Map();
+        
+        // 2a. Criar Objetivos Globais Primeiro
+        for (const g of globalObjs) {
+            const objPayload = { type: 'global', name: g.name, owner: g.owner, year: g.year };
+            const objRes = await postDataWithResponse('/objectives', objPayload);
+            if (objRes && objRes.id) {
+                createdObjs++;
+                titleToIdMap.set(g.name, objRes.id);
+                for (const kr of g.krs) {
+                    const krPayload = { ...kr, global_id: objRes.id, quarterly_id: "" };
+                    await postData('/krs', krPayload);
+                    createdKRs++;
+                }
+            }
+        }
+        
+        // 2b. Criar Objetivos Trimestrais
+        for (const q of qObjs) {
+            let globalId = titleToIdMap.get(q.globalLinkStr);
+            if (!globalId) {
+                const exist = rawData.objectives.find(o => o.type === 'global' && o.name === q.globalLinkStr);
+                if (exist) globalId = exist.id;
+            }
+            if (!globalId) {
+                console.warn("Global não encontrado para Trimestral: ", q.name);
+                continue; // Pula se n achar o global
+            }
+            
+            const objPayload = { type: 'quarterly', name: q.name, owner: q.owner, year: q.year, global_id: globalId, quarter: q.quarter };
+            const objRes = await postDataWithResponse('/objectives', objPayload);
+            if (objRes && objRes.id) {
+                createdObjs++;
+                titleToIdMap.set(q.name, objRes.id);
+                for (const kr of q.krs) {
+                    const krPayload = { ...kr, global_id: globalId, quarterly_id: objRes.id };
+                    await postData('/krs', krPayload);
+                    createdKRs++;
+                }
+            }
+        }
+
+        statsDiv.innerHTML = `<span class="text-green-400 font-bold"><i class="ph ph-check-circle"></i> Sucesso! Foram importados ${createdObjs} Objetivos e ${createdKRs} KRs para o sistema.</span>`;
+        await fetchData(); // Atualiza painel
+        
+        document.getElementById('csv-upload-file').value = ''; // Limpa pra permitir re-envio
+
+        setTimeout(() => {
+            switchTab('dashboard');
+            statsDiv.classList.add('hidden');
+            document.getElementById('upload-csv-label').innerText = "Clique ou arraste o arquivo preenchido (.csv).";
+        }, 3000);
+        
+    } catch(e) {
+        statsDiv.innerHTML = `<span class="text-red-400 font-bold"><i class="ph ph-warning-circle"></i> Erro na importação: ${e.message}</span>`;
+        console.error(e);
+    }
 }
 
 async function postDataWithResponse(endpoint, data) {

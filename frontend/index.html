@@ -200,6 +200,12 @@
                 <i class="ph ph-plus-circle text-xl shrink-0"></i>
                 <span class="sidebar-label">Novo Cadastro</span>
             </button>
+
+            <!-- Importação em Lote -->
+            <button onclick="switchTab('import')" id="nav-import" class="w-full flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-gray-700/50 text-gray-400 hover:text-white font-medium transition-all">
+                <i class="ph ph-file-csv text-xl shrink-0"></i>
+                <span class="sidebar-label">Importação Lote</span>
+            </button>
         </nav>
         
         <div class="mt-auto">
@@ -384,6 +390,53 @@
                 </div>
             </div>
 
+            <!-- VIEW: IMPORTAÇÃO EM LOTE -->
+            <div id="view-import" class="hidden">
+                <div class="max-w-3xl mx-auto">
+                    <div class="glass-card rounded-2xl overflow-hidden p-8">
+                        <div class="mb-8">
+                            <h2 class="text-2xl font-bold text-white flex items-center gap-3 mb-2">
+                                <i class="ph ph-file-csv text-3xl text-primary-400"></i> Importar Lote de OKRs
+                            </h2>
+                            <p class="text-gray-400 text-sm">Baixe a planilha CSV base, preencha todas as linhas e envie o arquivo para cadastrar os objetivos e Key Results (KR) de uma só vez.</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 flex flex-col items-start gap-4">
+                                <div class="w-12 h-12 bg-green-500/20 text-green-400 rounded-lg flex items-center justify-center shrink-0">
+                                    <i class="ph ph-microsoft-excel-logo text-2xl"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-white font-medium mb-1">1. Baixar Modelo</h3>
+                                    <p class="text-xs text-gray-400 mb-4 h-8">Baixe o CSV padrão para preencher no Google Sheets ou Excel.</p>
+                                    <button onclick="downloadCsvTemplate()" class="bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium py-2 px-4 rounded-lg transition border border-gray-600 shadow-md">
+                                        <i class="ph ph-download-simple mb-0.5"></i> Baixar Planilha CSV
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-6 flex flex-col items-start gap-4 hover:border-primary-500 transition relative overflow-hidden group">
+                                <input type="file" id="csv-upload-file" accept=".csv" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="handleFileUpload(event)">
+                                <div class="w-12 h-12 bg-primary-500/20 text-primary-400 rounded-lg flex items-center justify-center shrink-0">
+                                    <i class="ph ph-upload-simple text-2xl group-hover:-translate-y-1 transition-transform"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-white font-medium mb-1">2. Enviar Planilha</h3>
+                                    <p class="text-xs text-gray-400 mb-4 h-8" id="upload-csv-label">Clique ou arraste o arquivo preenchido (.csv).</p>
+                                    <button class="bg-primary-600 hover:bg-primary-500 text-white text-sm font-medium py-2 px-4 rounded-lg transition border border-primary-500 relative z-0 shadow-md w-full">
+                                        Selecionar CSV
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="import-stats" class="bg-gray-900 border border-gray-700 rounded-xl p-6 hidden">
+                            <!-- Status injetado via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </main>
     
@@ -466,6 +519,7 @@
             }
         });
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
