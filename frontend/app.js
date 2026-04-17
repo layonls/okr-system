@@ -315,8 +315,9 @@ function renderDashboard() {
                     </div>
                     <div>
                         <span class="text-[10px] font-bold uppercase tracking-wider text-primary-400">Objetivo Global</span>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-3">
                             <h3 class="text-xl font-semibold text-white tracking-tight">${globalObj.name}</h3>
+                            ${globalObj.owner ? `<span class="bg-gray-800/50 border border-gray-700 text-gray-400 text-[11px] px-2 py-0.5 rounded-md flex items-center gap-1 mt-0.5"><i class="ph ph-user"></i> ${globalObj.owner}</span>` : ''}
                             <div class="flex items-center gap-1 opacity-0 group-hover/gobj:opacity-100 transition-opacity">
                                 <button onclick="event.stopPropagation(); editObjectivePrompt('${globalObj.id}')" class="p-1 text-gray-500 hover:text-blue-400 rounded transition" title="Editar Objetivo"><i class="ph ph-pencil-simple"></i></button>
                                 <button onclick="event.stopPropagation(); openAddKRExistingModal('${globalObj.id}', 'global', '${globalObj.name.replace(/'/g, "\\'")}')" class="p-1 text-green-500 hover:text-green-400 rounded transition" title="Adicionar Nova KR ao Objetivo"><i class="ph ph-plus-circle"></i></button>
@@ -389,6 +390,7 @@ function renderDashboard() {
                     <div class="flex items-center gap-3">
                         <span class="bg-blue-600 font-bold px-2.5 py-1 rounded text-white text-xs">${qObj.quarter}</span>
                         <h4 class="text-lg text-white font-semibold tracking-tight">${qObj.name}</h4>
+                        ${qObj.owner ? `<span class="bg-gray-800/50 border border-gray-700 text-gray-400 text-[11px] px-2 py-0.5 rounded-md flex items-center gap-1"><i class="ph ph-user"></i> ${qObj.owner}</span>` : ''}
                         ${!isTvMode ? `
                         <div class="ml-2 flex items-center gap-1 opacity-0 group-hover/qobj:opacity-100 transition-opacity">
                             <button onclick="event.stopPropagation(); editObjectivePrompt('${qObj.id}')" class="p-1.5 text-gray-400 hover:text-blue-400 rounded-lg hover:bg-gray-700 transition" title="Editar Objetivo"><i class="ph ph-pencil-simple"></i></button>
