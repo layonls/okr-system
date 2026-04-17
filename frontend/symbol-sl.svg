@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Silva Lopes Advogados - Brand Symbol (stylized wings/sails) -->
+  <!-- Silver/Gray wing -->
+  <path d="M30 90 C12 70, 8 45, 22 18 C27 8, 33 3, 36 1 C37 20, 35 50, 30 70 C28 78, 29 85, 30 90Z" 
+        fill="url(#silver)"/>
+  <!-- Dark blue wing (back) -->
+  <path d="M48 82 C36 62, 32 35, 42 10 C48 -2, 56 -6, 60 -8 C58 12, 52 40, 48 62 C46 72, 47 78, 48 82Z" 
+        fill="url(#darkblue)"/>
+  <!-- Bright blue wing (front) -->
+  <path d="M65 72 C55 55, 50 30, 60 5 C66 -8, 74 -12, 78 -14 C75 8, 68 35, 63 55 C61 63, 62 68, 65 72Z" 
+        fill="url(#brightblue)"/>
+  <defs>
+    <linearGradient id="silver" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#C0C0C0"/>
+      <stop offset="100%" stop-color="#808080"/>
+    </linearGradient>
+    <linearGradient id="darkblue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0057A8"/>
+      <stop offset="100%" stop-color="#002D57"/>
+    </linearGradient>
+    <linearGradient id="brightblue" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3498db"/>
+      <stop offset="100%" stop-color="#0057A8"/>
+    </linearGradient>
+  </defs>
+</svg>
