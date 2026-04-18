@@ -605,7 +605,7 @@
 
             signInWithPopup(auth, provider)
                 .then((result) => {
-                    const email = result.user.email;
+                    const email = (result.user.email || '').toLowerCase();
                     if (email && (email.endsWith('@silvalopes.adv.br') || email.endsWith('@tasklaw.com.br'))) {
                         document.getElementById('login-screen').classList.add('hidden');
                     } else {
@@ -622,7 +622,7 @@
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                const email = user.email;
+                const email = (user.email || '').toLowerCase();
                 if (email && (email.endsWith('@silvalopes.adv.br') || email.endsWith('@tasklaw.com.br'))) {
                     document.getElementById('login-screen').classList.add('hidden');
                 } else {
