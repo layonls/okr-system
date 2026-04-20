@@ -744,11 +744,11 @@ function setupForms() {
 // ----------------------------------------------------
 
 function downloadCsvTemplate() {
-    const csvContent = "\uFEFFTipo;Título;Responsável;Ano;Objetivo Global Vinculado;Trimestre;KR Nome;Base;Meta;Cálculo;Direção;Frequência\n" +
-        "Global;Chegar a dezenas de milhões;João Silva;2026;;;Aumentar receita LTV;0;10;sum;increase;monthly\n" + 
-        "Global;Chegar a dezenas de milhões;João Silva;2026;;;Reduzir cancelamentos;15;5;avg;decrease;monthly\n" + 
-        "Trimestral;Triplicar Vendas Q1;Maria Souza;2026;Chegar a dezenas de milhões;Q1;Vender 3 milhões;0;3;sum;increase;monthly\n" +
-        "Trimestral;Triplicar Vendas Q1;Maria Souza;2026;Chegar a dezenas de milhões;Q1;Fechar 50 contratos;0;50;sum;increase;monthly\n";
+    const csvContent = "\uFEFFTipo;Título;Responsável;Ano;Objetivo Global Vinculado;Trimestre;KR Nome;Base;Meta;Cálculo;Direção;Frequência;Jan;Fev;Mar;Abr;Mai;Jun;Jul;Ago;Set;Out;Nov;Dez\n" +
+        "Global;Chegar a dezenas de milhões;João Silva;2026;;;Aumentar receita LTV;0;10;sum;increase;monthly;1;2;3;;;;;;;;;\n" + 
+        "Global;Chegar a dezenas de milhões;João Silva;2026;;;Reduzir cancelamentos;15;5;avg;decrease;monthly;15;14;;;;;;;;;;\n" + 
+        "Trimestral;Triplicar Vendas Q1;Maria Souza;2026;Chegar a dezenas de milhões;Q1;Vender 3 milhões;0;3;sum;increase;monthly;0.5;1;1.2;;;;;;;;;\n" +
+        "Trimestral;Triplicar Vendas Q1;Maria Souza;2026;Chegar a dezenas de milhões;Q1;Fechar 50 contratos;0;50;sum;increase;monthly;5;15;25;;;;;;;;;\n";
     
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -811,7 +811,19 @@ async function processBulkImport(data) {
                     target_value: row['Meta']?.trim() || '100',
                     calculation: row['Cálculo']?.trim() || 'sum',
                     measurement: row['Direção']?.trim() || 'increase',
-                    frequency: row['Frequência']?.trim() || 'monthly'
+                    frequency: row['Frequência']?.trim() || 'monthly',
+                    Jan: row['Jan']?.trim() || '',
+                    Feb: row['Fev']?.trim() || '',
+                    Mar: row['Mar']?.trim() || '',
+                    Apr: row['Abr']?.trim() || '',
+                    May: row['Mai']?.trim() || '',
+                    Jun: row['Jun']?.trim() || '',
+                    Jul: row['Jul']?.trim() || '',
+                    Aug: row['Ago']?.trim() || '',
+                    Sep: row['Set']?.trim() || '',
+                    Oct: row['Out']?.trim() || '',
+                    Nov: row['Nov']?.trim() || '',
+                    Dec: row['Dez']?.trim() || ''
                 });
             }
         });
