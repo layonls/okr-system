@@ -159,6 +159,41 @@ function calculateKRProgress(kr) {
     };
 }
 
+function getObjectiveExpectedProgress(obj) {
+    const today = new Date();
+    const objYear = parseInt(obj.year || today.getFullYear());
+    
+    if (today.getFullYear() > objYear) return 100;
+    if (today.getFullYear() < objYear) return 0;
+    
+    if (obj.type === 'global') {
+        const startOfYear = new Date(objYear, 0, 1);
+        const endOfYear = new Date(objYear, 11, 31);
+        const totalDays = (endOfYear - startOfYear) / (1000 * 60 * 60 * 24) + 1;
+        const elapsedDays = (today - startOfYear) / (1000 * 60 * 60 * 24);
+        return Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
+    } else if (obj.type === 'quarterly') {
+        let qStartMonth, qEndMonth;
+        switch(obj.quarter) {
+            case 'Q1': qStartMonth = 0; qEndMonth = 2; break;
+            case 'Q2': qStartMonth = 3; qEndMonth = 5; break;
+            case 'Q3': qStartMonth = 6; qEndMonth = 8; break;
+            case 'Q4': qStartMonth = 9; qEndMonth = 11; break;
+            default: return 0;
+        }
+        const startOfQ = new Date(objYear, qStartMonth, 1);
+        const endOfQ = new Date(objYear, qEndMonth + 1, 0); 
+        
+        if (today < startOfQ) return 0;
+        if (today > endOfQ) return 100;
+        
+        const totalDays = (endOfQ - startOfQ) / (1000 * 60 * 60 * 24) + 1;
+        const elapsedDays = (today - startOfQ) / (1000 * 60 * 60 * 24);
+        return Math.min(100, Math.max(0, (elapsedDays / totalDays) * 100));
+    }
+    return 0;
+}
+
 function renderDashboard() {
     const globals = rawData.objectives.filter(o => o.type === 'global');
     const quarterlies = rawData.objectives.filter(o => o.type === 'quarterly');
@@ -303,6 +338,11 @@ function renderDashboard() {
 
         totalGlobalsProgress += globalAvgProgress;
         computedGlobals++;
+        
+        const expectedGlobal = getObjectiveExpectedProgress(globalObj);
+        const globalStatusHtml = globalAvgProgress >= (expectedGlobal - 5)
+            ? `<span class="bg-green-500/20 border border-green-500/30 text-green-400 text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 mt-0.5" title="Progresso esperado linear: ${expectedGlobal.toFixed(1)}%"><i class="ph ph-check-circle"></i> No Prazo</span>`
+            : `<span class="bg-red-500/20 border border-red-500/30 text-red-400 text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 mt-0.5" title="Progresso esperado linear: ${expectedGlobal.toFixed(1)}%"><i class="ph ph-warning-circle"></i> Atrasado</span>`;
 
         const card = document.createElement('div');
         card.className = 'glass-card rounded-2xl overflow-hidden border border-gray-700/50 mb-6 group/gobj';
@@ -315,9 +355,10 @@ function renderDashboard() {
                     </div>
                     <div>
                         <span class="text-[10px] font-bold uppercase tracking-wider text-primary-400">Objetivo Global</span>
-                        <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2">
                             <h3 class="text-xl font-semibold text-white tracking-tight">${globalObj.name}</h3>
                             ${globalObj.owner ? `<span class="bg-gray-800/50 border border-gray-700 text-gray-400 text-[11px] px-2 py-0.5 rounded-md flex items-center gap-1 mt-0.5"><i class="ph ph-user"></i> ${globalObj.owner}</span>` : ''}
+                            ${globalStatusHtml}
                             <div class="flex items-center gap-1 opacity-0 group-hover/gobj:opacity-100 transition-opacity">
                                 <button onclick="event.stopPropagation(); editObjectivePrompt('${globalObj.id}')" class="p-1 text-gray-500 hover:text-blue-400 rounded transition" title="Editar Objetivo"><i class="ph ph-pencil-simple"></i></button>
                                 <button onclick="event.stopPropagation(); openAddKRExistingModal('${globalObj.id}', 'global', '${globalObj.name.replace(/'/g, "\\'")}')" class="p-1 text-green-500 hover:text-green-400 rounded transition" title="Adicionar Nova KR ao Objetivo"><i class="ph ph-plus-circle"></i></button>
@@ -377,6 +418,12 @@ function renderDashboard() {
             if (qKRs.length > 0) {
                 qProgress = qKRs.reduce((s, kr) => s + calculateKRProgress(kr).progress, 0) / qKRs.length;
             }
+            
+            const expectedQuarterly = getObjectiveExpectedProgress(qObj);
+            const quarterStatusHtml = qProgress >= (expectedQuarterly - 5)
+                ? `<span class="bg-green-500/20 border border-green-500/30 text-green-400 text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1" title="Progresso esperado linear: ${expectedQuarterly.toFixed(1)}%"><i class="ph ph-check-circle"></i> No Prazo</span>`
+                : `<span class="bg-red-500/20 border border-red-500/30 text-red-400 text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1" title="Progresso esperado linear: ${expectedQuarterly.toFixed(1)}%"><i class="ph ph-warning-circle"></i> Atrasado</span>`;
+
 
             const qSection = document.createElement('div');
             qSection.className = 'bg-gray-800/40 rounded-xl border border-blue-500/20 p-5 mt-6 relative overflow-hidden group/qobj';
@@ -387,10 +434,11 @@ function renderDashboard() {
                 <div class="absolute top-0 left-0 w-1 h-full bg-blue-500/50"></div>
                 
                 <div class="flex flex-col md:flex-row md:items-center gap-3 mb-5 pl-2 pb-3 border-b border-gray-700/50">
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 flex-wrap">
                         <span class="bg-blue-600 font-bold px-2.5 py-1 rounded text-white text-xs">${qObj.quarter}</span>
                         <h4 class="text-lg text-white font-semibold tracking-tight">${qObj.name}</h4>
                         ${qObj.owner ? `<span class="bg-gray-800/50 border border-gray-700 text-gray-400 text-[11px] px-2 py-0.5 rounded-md flex items-center gap-1"><i class="ph ph-user"></i> ${qObj.owner}</span>` : ''}
+                        ${quarterStatusHtml}
                         ${!isTvMode ? `
                         <div class="ml-2 flex items-center gap-1 opacity-0 group-hover/qobj:opacity-100 transition-opacity">
                             <button onclick="event.stopPropagation(); editObjectivePrompt('${qObj.id}')" class="p-1.5 text-gray-400 hover:text-blue-400 rounded-lg hover:bg-gray-700 transition" title="Editar Objetivo"><i class="ph ph-pencil-simple"></i></button>
