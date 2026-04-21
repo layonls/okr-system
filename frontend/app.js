@@ -194,10 +194,10 @@ function getObjectiveExpectedProgress(obj) {
     return 0;
 }
 
-let tvScrollInterval = null;
+let tvScrollRAF = null;
 
 function setupTvAutoScroll() {
-    if (tvScrollInterval) clearInterval(tvScrollInterval);
+    if (tvScrollRAF) cancelAnimationFrame(tvScrollRAF);
     
     // Selects containers directly generated in TV mode
     const containers = document.querySelectorAll('.tv-auto-scroll');
@@ -207,19 +207,19 @@ function setupTvAutoScroll() {
     const states = Array.from(containers).map(c => ({
         el: c,
         dir: 1, // 1 = down, -1 = up
-        waitTicks: 166, // to pause at top/bottom (approx 5s)
+        waitFrames: 300, // to pause at top/bottom (approx 5s @ 60fps)
         exactTop: 0
     }));
 
-    tvScrollInterval = setInterval(() => {
+    function autoScrollTick() {
         states.forEach(state => {
             const el = state.el;
             
             // If it doesn't overflow, do nothing
             if (el.scrollHeight <= el.clientHeight) return;
             
-            if (state.waitTicks > 0) {
-                state.waitTicks--;
+            if (state.waitFrames > 0) {
+                state.waitFrames--;
                 return;
             }
 
@@ -228,21 +228,24 @@ function setupTvAutoScroll() {
                 state.exactTop = el.scrollTop;
             }
 
-            state.exactTop += state.dir * 0.35; // very slow and smooth (before it was 0.8)
+            state.exactTop += state.dir * 0.2; // ~12 pixels por segundo
             el.scrollTop = state.exactTop;
 
             // check if hit bottom
             if (state.dir === 1 && Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight - 1) {
                 state.dir = -1;
-                state.waitTicks = 166; // 5s pause
+                state.waitFrames = 300; // 5s pause
             }
             // check if hit top
             else if (state.dir === -1 && el.scrollTop <= 0) {
                 state.dir = 1;
-                state.waitTicks = 166; // 5s pause
+                state.waitFrames = 300; // 5s pause
             }
         });
-    }, 30);
+        tvScrollRAF = requestAnimationFrame(autoScrollTick);
+    }
+    
+    tvScrollRAF = requestAnimationFrame(autoScrollTick);
 }
 
 function renderDashboard() {
