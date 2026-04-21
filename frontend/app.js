@@ -203,6 +203,9 @@ function renderDashboard() {
 
     const container = document.getElementById('global-objectives-container');
     container.innerHTML = '';
+    
+    const expandControls = document.getElementById('desktop-expand-controls');
+    if (expandControls) expandControls.classList.add('hidden');
 
     let totalGlobalsProgress = 0;
     let computedGlobals = 0;
@@ -354,6 +357,8 @@ function renderDashboard() {
     // ==========================================
     // DESKTOP NORMAL RENDERING
     // ==========================================
+    if (expandControls) expandControls.classList.remove('hidden');
+    
     globals.forEach(globalObj => {
         const linkedKRs = rawData.key_results.filter(kr => kr.global_id === globalObj.id);
 
@@ -646,6 +651,26 @@ function toggleAccordion(id) {
         openAccordions.delete(id);
     }
 }
+
+window.toggleAllAccordions = function(expand) {
+    const globals = rawData.objectives.filter(o => o.type === 'global');
+    globals.forEach(g => {
+        const id = 'acc-' + g.id;
+        const el = document.getElementById(id);
+        const icon = document.getElementById('icon-' + g.id);
+        if (!el) return;
+        
+        if (expand) {
+            el.classList.remove('hidden');
+            if (icon) icon.style.transform = 'rotate(180deg)';
+            openAccordions.add(id);
+        } else {
+            el.classList.add('hidden');
+            if (icon) icon.style.transform = 'rotate(0deg)';
+            openAccordions.delete(id);
+        }
+    });
+};
 
 let krRowCount = 0;
 

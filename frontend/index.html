@@ -267,6 +267,16 @@
                     </div>
                 </div>
 
+                <!-- Toggle all accordions controls -->
+                <div class="flex justify-end gap-3 mb-2 hidden" id="desktop-expand-controls">
+                    <button onclick="toggleAllAccordions(true)" class="text-xs font-semibold text-gray-400 hover:text-white px-3 py-1.5 rounded-md border border-gray-700/50 hover:bg-gray-800 transition flex items-center gap-1.5 shadow-sm">
+                        <i class="ph ph-arrows-out-line-vertical"></i> Expandir Todos
+                    </button>
+                    <button onclick="toggleAllAccordions(false)" class="text-xs font-semibold text-gray-400 hover:text-white px-3 py-1.5 rounded-md border border-gray-700/50 hover:bg-gray-800 transition flex items-center gap-1.5 shadow-sm">
+                        <i class="ph ph-arrows-in-line-vertical"></i> Retrair Todos
+                    </button>
+                </div>
+
                 <!-- Global Objectives List Container -->
                 <div id="global-objectives-container" class="space-y-6">
                     <!-- Cards will be dynamically injected here via JS -->
@@ -580,7 +590,7 @@
     </div>
 
     <!-- Application Script -->
-    <script src="./app.js?v=2.3"></script>
+    <script src="./app.js?v=2.4"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
