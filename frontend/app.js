@@ -207,7 +207,8 @@ function setupTvAutoScroll() {
     const states = Array.from(containers).map(c => ({
         el: c,
         dir: 1, // 1 = down, -1 = up
-        waitTicks: 80 // to pause at top/bottom (approx 2.4s)
+        waitTicks: 166, // to pause at top/bottom (approx 5s)
+        exactTop: 0
     }));
 
     tvScrollInterval = setInterval(() => {
@@ -222,17 +223,23 @@ function setupTvAutoScroll() {
                 return;
             }
 
-            el.scrollTop += state.dir * 0.8;
+            // Accumulate decimals safely to ensure ultra-smooth slow scroll
+            if (Math.abs(el.scrollTop - state.exactTop) > 2) {
+                state.exactTop = el.scrollTop;
+            }
+
+            state.exactTop += state.dir * 0.35; // very slow and smooth (before it was 0.8)
+            el.scrollTop = state.exactTop;
 
             // check if hit bottom
             if (state.dir === 1 && Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight - 1) {
                 state.dir = -1;
-                state.waitTicks = 120; // 3.6s pause
+                state.waitTicks = 166; // 5s pause
             }
             // check if hit top
             else if (state.dir === -1 && el.scrollTop <= 0) {
                 state.dir = 1;
-                state.waitTicks = 120; // 3.6s pause
+                state.waitTicks = 166; // 5s pause
             }
         });
     }, 30);
