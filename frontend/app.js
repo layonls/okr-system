@@ -268,8 +268,9 @@ function renderDashboard() {
                 const linkedKRs = rawData.key_results.filter(kr => kr.global_id === globalObj.id);
 
                 let progress = 0;
-                if (linkedKRs.length > 0) {
-                    progress = linkedKRs.reduce((s, kr) => s + calculateKRProgress(kr).progress, 0) / linkedKRs.length;
+                const directLinkedKRs = linkedKRs.filter(kr => !kr.quarterly_id || kr.quarterly_id === "");
+                if (directLinkedKRs.length > 0) {
+                    progress = directLinkedKRs.reduce((s, kr) => s + calculateKRProgress(kr).progress, 0) / directLinkedKRs.length;
                 }
 
                 const expectedGlobal = getObjectiveExpectedProgress(globalObj);
@@ -357,9 +358,10 @@ function renderDashboard() {
         const linkedKRs = rawData.key_results.filter(kr => kr.global_id === globalObj.id);
 
         let globalAvgProgress = 0;
-        if (linkedKRs.length > 0) {
-            const sumProgress = linkedKRs.reduce((sum, kr) => sum + calculateKRProgress(kr).progress, 0);
-            globalAvgProgress = sumProgress / linkedKRs.length;
+        const globalDirectKRsForAvg = linkedKRs.filter(kr => !kr.quarterly_id || kr.quarterly_id === "");
+        if (globalDirectKRsForAvg.length > 0) {
+            const sumProgress = globalDirectKRsForAvg.reduce((sum, kr) => sum + calculateKRProgress(kr).progress, 0);
+            globalAvgProgress = sumProgress / globalDirectKRsForAvg.length;
         }
 
         totalGlobalsProgress += globalAvgProgress;
