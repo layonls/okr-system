@@ -113,6 +113,8 @@
         ::-webkit-scrollbar-track { background: #0a1628; }
         ::-webkit-scrollbar-thumb { background: #1a2b45; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #2a4060; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
         .animated-gradient {
             background: linear-gradient(-45deg, #003d73, #0057A8, #2B8FD4, #5eb3f5);
@@ -590,7 +592,7 @@
     </div>
 
     <!-- Application Script -->
-    <script src="./app.js?v=2.5"></script>
+    <script src="./app.js?v=2.6"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";

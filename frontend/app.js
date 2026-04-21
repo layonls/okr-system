@@ -194,6 +194,50 @@ function getObjectiveExpectedProgress(obj) {
     return 0;
 }
 
+let tvScrollInterval = null;
+
+function setupTvAutoScroll() {
+    if (tvScrollInterval) clearInterval(tvScrollInterval);
+    
+    // Selects containers directly generated in TV mode
+    const containers = document.querySelectorAll('.tv-auto-scroll');
+    if (containers.length === 0) return;
+
+    // Track scroll directions independently
+    const states = Array.from(containers).map(c => ({
+        el: c,
+        dir: 1, // 1 = down, -1 = up
+        waitTicks: 80 // to pause at top/bottom (approx 2.4s)
+    }));
+
+    tvScrollInterval = setInterval(() => {
+        states.forEach(state => {
+            const el = state.el;
+            
+            // If it doesn't overflow, do nothing
+            if (el.scrollHeight <= el.clientHeight) return;
+            
+            if (state.waitTicks > 0) {
+                state.waitTicks--;
+                return;
+            }
+
+            el.scrollTop += state.dir * 0.8;
+
+            // check if hit bottom
+            if (state.dir === 1 && Math.ceil(el.scrollTop + el.clientHeight) >= el.scrollHeight - 1) {
+                state.dir = -1;
+                state.waitTicks = 120; // 3.6s pause
+            }
+            // check if hit top
+            else if (state.dir === -1 && el.scrollTop <= 0) {
+                state.dir = 1;
+                state.waitTicks = 120; // 3.6s pause
+            }
+        });
+    }, 30);
+}
+
 function renderDashboard() {
     const globals = rawData.objectives.filter(o => o.type === 'global');
     const quarterlies = rawData.objectives.filter(o => o.type === 'quarterly');
@@ -296,7 +340,7 @@ function renderDashboard() {
                         </div>
                         <div class="text-lg font-black text-blue-900 bg-white px-2 py-0.5 rounded shadow-sm shrink-0 mt-0.5">${progress.toFixed(0)}%</div>
                     </div>
-                    <div class="p-4 flex-1 overflow-y-auto min-h-0">
+                    <div class="p-4 flex-1 overflow-y-auto min-h-0 tv-auto-scroll hide-scrollbar">
                         ${renderCompactKRListHtml(linkedKRs)}
                     </div>
                 `;
@@ -340,7 +384,7 @@ function renderDashboard() {
                         </div>
                         <div class="text-lg font-black text-blue-900 bg-white px-2 py-0.5 rounded shadow-sm shrink-0 mt-0.5">${progress.toFixed(0)}%</div>
                     </div>
-                    <div class="p-4 flex-1 overflow-y-auto min-h-0">
+                    <div class="p-4 flex-1 overflow-y-auto min-h-0 tv-auto-scroll hide-scrollbar">
                         ${renderCompactKRListHtml(qKRs)}
                     </div>
                 `;
@@ -351,6 +395,7 @@ function renderDashboard() {
                 });
             });
         }
+        setupTvAutoScroll();
         return;
     }
 
