@@ -226,12 +226,22 @@ function renderDashboard() {
             return krs.map(kr => {
                 const krData = calculateKRProgress(kr);
                 const isDecrease = kr.measurement === 'decrease';
+                
+                const parentObj = rawData.objectives.find(o => o.id === (kr.quarterly_id || kr.global_id));
+                const expected = parentObj ? getObjectiveExpectedProgress(parentObj) : 0;
+                const krStatusHtml = krData.progress >= (expected - 5)
+                    ? `<span class="bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded text-[9px] flex items-center gap-0.5 font-bold whitespace-nowrap mt-0.5"><i class="ph ph-check-circle"></i> No Prazo</span>`
+                    : `<span class="bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded text-[9px] flex items-center gap-0.5 font-bold whitespace-nowrap mt-0.5"><i class="ph ph-warning-circle"></i> Atrasado</span>`;
+
                 return `
                 <div class="bg-gray-800/60 border border-gray-700/40 rounded px-2.5 py-1.5 mb-1.5 hover:border-gray-500 transition shadow-sm flex flex-row items-center gap-3">
                     <div class="flex-1 min-w-0 flex flex-col justify-center">
-                        <h4 class="text-white font-semibold text-[11.5px] lg:text-xs leading-tight mb-1 break-words whitespace-normal" title="${kr.name}">
-                            ${kr.name}
-                        </h4>
+                        <div class="flex items-start gap-1.5 mb-1 flex-wrap">
+                            <h4 class="text-white font-semibold text-[11.5px] lg:text-xs leading-tight break-words whitespace-normal" title="${kr.name}">
+                                ${kr.name}
+                            </h4>
+                            ${krStatusHtml}
+                        </div>
                         <div class="flex flex-row flex-wrap items-center gap-2 text-[10px] text-gray-400">
                             <span class="flex items-center gap-0.5">B: <span class="text-white font-medium">${kr.base_value}</span></span>
                             <span class="flex items-center gap-0.5">M: <span class="text-white font-medium">${kr.target_value}</span></span>
@@ -262,13 +272,21 @@ function renderDashboard() {
                     progress = linkedKRs.reduce((s, kr) => s + calculateKRProgress(kr).progress, 0) / linkedKRs.length;
                 }
 
+                const expectedGlobal = getObjectiveExpectedProgress(globalObj);
+                const globalTvStatus = progress >= (expectedGlobal - 5)
+                    ? `<span class="bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded text-[10px] font-medium border border-green-500/30 flex items-center gap-1 shadow-sm"><i class="ph ph-check-circle"></i> No Prazo</span>`
+                    : `<span class="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded text-[10px] font-medium border border-red-500/30 flex items-center gap-1 shadow-sm"><i class="ph ph-warning-circle"></i> Atrasado</span>`;
+
                 const card = document.createElement('div');
                 card.className = 'bg-gray-900/90 rounded-lg border border-gray-700/80 overflow-hidden shadow-2xl flex flex-col h-full ring-1 ring-white/5 min-h-0';
                 card.innerHTML = `
                     <div class="bg-blue-700 px-4 py-3 border-b border-blue-800 flex items-start justify-between shrink-0 gap-2">
-                        <div class="flex-1 min-w-0">
-                            <h3 class="text-base text-white font-bold tracking-tight uppercase break-words whitespace-normal leading-snug" title="${globalObj.name}">
-                                <span class="bg-white/20 px-1 py-0.5 rounded text-xs mr-1 align-middle">Global</span>
+                        <div class="flex-1 min-w-0 flex flex-col items-start">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="bg-white/20 px-1.5 py-0.5 rounded text-[10px] font-semibold text-white uppercase tracking-wider">Global</span>
+                                ${globalTvStatus}
+                            </div>
+                            <h3 class="text-base text-white font-bold tracking-tight uppercase break-words whitespace-normal leading-snug mt-1.5" title="${globalObj.name}">
                                 ${globalObj.name}
                             </h3>
                         </div>
@@ -297,13 +315,21 @@ function renderDashboard() {
                     progress = qKRs.reduce((s, kr) => s + calculateKRProgress(kr).progress, 0) / qKRs.length;
                 }
 
+                const expectedQ = getObjectiveExpectedProgress(qObj);
+                const qTvStatus = progress >= (expectedQ - 5)
+                    ? `<span class="bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded text-[10px] font-medium border border-green-500/30 flex items-center gap-1 shadow-sm"><i class="ph ph-check-circle"></i> No Prazo</span>`
+                    : `<span class="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded text-[10px] font-medium border border-red-500/30 flex items-center gap-1 shadow-sm"><i class="ph ph-warning-circle"></i> Atrasado</span>`;
+
                 const card = document.createElement('div');
                 card.className = 'bg-gray-900/90 rounded-lg border border-gray-700/80 overflow-hidden shadow-2xl flex flex-col h-full ring-1 ring-white/5 min-h-0';
                 card.innerHTML = `
                     <div class="bg-blue-700 px-4 py-3 border-b border-blue-800 flex items-start justify-between shrink-0 gap-2">
-                        <div class="flex-1 min-w-0">
-                            <h3 class="text-base text-white font-bold tracking-tight uppercase break-words whitespace-normal leading-snug" title="${qObj.name}">
-                                <span class="bg-white/20 px-1 py-0.5 rounded text-xs mr-1 align-middle">${qObj.quarter}</span>
+                        <div class="flex-1 min-w-0 flex flex-col items-start">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="bg-white/20 px-1.5 py-0.5 rounded text-[10px] font-semibold text-white uppercase tracking-wider">${qObj.quarter}</span>
+                                ${qTvStatus}
+                            </div>
+                            <h3 class="text-base text-white font-bold tracking-tight uppercase break-words whitespace-normal leading-snug mt-1.5" title="${qObj.name}">
                                 ${qObj.name}
                             </h3>
                             <div class="text-xs text-blue-200 mt-2 opacity-90 break-words whitespace-normal leading-relaxed" title="Vinculado a: ${globalName}"><span class="font-medium text-blue-300">Vinc:</span> ${globalName}</div>
@@ -483,15 +509,24 @@ function renderKRListHtml(krs) {
         const krData = calculateKRProgress(kr);
         const isDecrease = kr.measurement === 'decrease';
 
+        const parentObj = rawData.objectives.find(o => o.id === (kr.quarterly_id || kr.global_id));
+        const expected = parentObj ? getObjectiveExpectedProgress(parentObj) : 0;
+        const krStatusHtml = krData.progress >= (expected - 5)
+            ? `<span class="bg-green-500/20 border border-green-500/30 text-green-400 text-[10px] px-1.5 py-0.5 rounded-md flex items-center gap-1 mt-0.5 whitespace-nowrap" title="Progresso esperado: ${expected.toFixed(1)}%"><i class="ph ph-check-circle"></i> No Prazo</span>`
+            : `<span class="bg-red-500/20 border border-red-500/30 text-red-400 text-[10px] px-1.5 py-0.5 rounded-md flex items-center gap-1 mt-0.5 whitespace-nowrap" title="Progresso esperado: ${expected.toFixed(1)}%"><i class="ph ph-warning-circle"></i> Atrasado</span>`;
+
         return `
         <div class="bg-gray-800/80 border border-gray-700/50 rounded-xl p-4 hover:border-gray-500 transition flex flex-row items-center gap-4 mb-3 group/kr">
             <div class="flex-1 min-w-0"> <!-- min-w-0 prevents flex items from overflowing -->
                 <div class="flex justify-between items-start mb-2">
                     <div class="min-w-0 w-full flex items-start justify-between pr-2">
-                        <h4 class="text-white font-semibold flex items-start gap-2 text-[15px] leading-snug">
-                            <i class="ph ph-target text-primary-400 shrink-0 mt-0.5 text-lg"></i>
-                            <span class="break-words">${kr.name}</span>
-                        </h4>
+                        <div class="flex items-start gap-2 flex-wrap">
+                            <h4 class="text-white font-semibold flex items-start gap-2 text-[15px] leading-snug">
+                                <i class="ph ph-target text-primary-400 shrink-0 mt-0.5 text-lg"></i>
+                                <span class="break-words">${kr.name}</span>
+                            </h4>
+                            ${krStatusHtml}
+                        </div>
                         
                         ${!isTvMode ? `
                         <div class="flex items-center gap-1 opacity-0 group-hover/kr:opacity-100 transition-opacity">
