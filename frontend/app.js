@@ -754,6 +754,7 @@ function renderKRChart(canvasId, kr, validMonths) {
                     borderWidth: 3,
                     tension: 0.4,
                     fill: true,
+                    clip: false,
                     spanGaps: true,
                     pointRadius: isTvMode ? 3 : 6,
                     pointHoverRadius: isTvMode ? 5 : 8,
