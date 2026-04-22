@@ -668,6 +668,18 @@ function renderDashboard() {
     if (computedGlobals > 0) {
         const globalAvg = totalGlobalsProgress / computedGlobals;
         document.getElementById('stat-avg-progress').innerText = `${globalAvg.toFixed(1)}%`;
+        
+        const badgeContainer = document.getElementById('stat-avg-badge');
+        if (badgeContainer) {
+            const expectedGlobal = getObjectiveExpectedProgress({ type: 'global' });
+            badgeContainer.innerHTML = globalAvg >= (expectedGlobal - 5)
+                ? `<span class="bg-green-500/20 text-green-300 px-2 py-0.5 rounded text-[11px] font-medium border border-green-500/30 flex items-center gap-1 shadow-sm"><i class="ph ph-check-circle"></i> No Prazo</span>`
+                : `<span class="bg-red-500/20 text-red-300 px-2 py-0.5 rounded text-[11px] font-medium border border-red-500/30 flex items-center gap-1 shadow-sm"><i class="ph ph-warning-circle"></i> Atrasado (Esp: ${expectedGlobal.toFixed(0)}%)</span>`;
+        }
+    } else {
+        const badgeContainer = document.getElementById('stat-avg-badge');
+        if (badgeContainer) badgeContainer.innerHTML = '';
+        document.getElementById('stat-avg-progress').innerText = '0%';
     }
 }
 
