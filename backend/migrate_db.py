@@ -22,14 +22,22 @@ def migrate():
     with Session(engine) as session:
         # Check if already migrated
         existing_objs = session.query(Objective).count()
-        if existing_objs > 0:
+        existing_krs = session.query(KeyResult).count()
+        if existing_objs > 0 or existing_krs > 0:
             print("Database already contains data. Migration aborted.")
             return
 
+        obj_ids_seen = set()
+        kr_ids_seen = set()
+
         print(f"Migrating {len(data.get('objectives', []))} objectives...")
         for obj_dict in data.get("objectives", []):
+            obj_id = str(obj_dict.get("id"))
+            if not obj_id or obj_id in obj_ids_seen:
+                continue
+            obj_ids_seen.add(obj_id)
             obj = Objective(
-                id=obj_dict.get("id"),
+                id=obj_id,
                 name=obj_dict.get("name"),
                 type=obj_dict.get("type"),
                 owner=obj_dict.get("owner", ""),
@@ -40,8 +48,12 @@ def migrate():
 
         print(f"Migrating {len(data.get('key_results', []))} key results...")
         for kr_dict in data.get("key_results", []):
+            kr_id = str(kr_dict.get("id"))
+            if not kr_id or kr_id in kr_ids_seen:
+                continue
+            kr_ids_seen.add(kr_id)
             kr = KeyResult(
-                id=kr_dict.get("id"),
+                id=kr_id,
                 name=kr_dict.get("name"),
                 measurement=kr_dict.get("measurement", "increase"),
                 base_value=kr_dict.get("base_value", "0"),
