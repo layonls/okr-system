@@ -46,6 +46,16 @@ document.addEventListener('DOMContentLoaded', () => {
         exitBtn.className = 'fixed bottom-[3vh] right-[2vw] bg-gray-800/50 hover:bg-gray-700 border border-gray-700 p-[1vh] rounded-[1vh] text-gray-400 hover:text-white transition flex items-center gap-[0.5vw] backdrop-blur-md opacity-10 hover:opacity-100 z-50';
         exitBtn.innerHTML = '<i class="ph ph-sign-out text-[2vh]"></i> <span class="text-[1vh] font-medium uppercase tracking-widest">Sair da TV</span>';
         document.body.appendChild(exitBtn);
+
+        // Atualização automática via API no modo TV
+        setInterval(() => fetchData(true), 300000); // 5 min
+
+        // Atalho de Esc para sair do modo TV
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                window.location.href = '?';
+            }
+        });
     }
 });
 
@@ -101,11 +111,32 @@ function toggleSidebar() {
     document.getElementById('app-sidebar').classList.toggle('sidebar-collapsed');
 }
 
-async function fetchData() {
+async function fetchWithAuth(url, options = {}) {
+    const headers = options.headers || {};
+    if (window.getCurrentToken) {
+        const token = await window.getCurrentToken();
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+    }
+    options.headers = headers;
+    return fetch(url, options);
+}
+
+let debounceTimer;
+function debounceRender() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        renderDashboard();
+    }, 300);
+}
+
+async function fetchData(silent = false) {
     try {
-        const response = await fetch(`${API_URL}/data`);
+        const response = await fetchWithAuth(`${API_URL}/data`);
         if (response.ok) {
             rawData = await response.json();
+            populateOwnerFilter();
             renderDashboard();
             populateSelects();
         } else {
@@ -113,7 +144,34 @@ async function fetchData() {
         }
     } catch (e) {
         console.error("Failed to fetch data", e);
-        alert(`Ocorreu um erro: ${e.message}\nVerifique o console para mais detalhes.`);
+        if (!silent) alert(`Ocorreu um erro: ${e.message}\nVerifique o console para mais detalhes.`);
+    }
+}
+
+function populateOwnerFilter() {
+    const filterSelect = document.getElementById('filter-owner');
+    if (!filterSelect) return;
+    
+    // Mantém o selecionado
+    const currentValue = filterSelect.value;
+    
+    const owners = new Set();
+    rawData.objectives.forEach(o => { if (o.owner) owners.add(o.owner); });
+    
+    // Limpa a partir da index 1
+    while (filterSelect.options.length > 1) {
+        filterSelect.remove(1);
+    }
+    
+    Array.from(owners).sort().forEach(owner => {
+        const opt = document.createElement('option');
+        opt.value = owner;
+        opt.text = owner;
+        filterSelect.appendChild(opt);
+    });
+    
+    if (currentValue) {
+        filterSelect.value = currentValue;
     }
 }
 
@@ -249,14 +307,49 @@ function setupTvAutoScroll() {
 }
 
 function renderDashboard() {
-    const globals = rawData.objectives.filter(o => o.type === 'global');
-    const quarterlies = rawData.objectives.filter(o => o.type === 'quarterly');
+    let globals = rawData.objectives.filter(o => o.type === 'global');
+    let quarterlies = rawData.objectives.filter(o => o.type === 'quarterly');
 
-    document.getElementById('stat-globals').innerText = globals.length;
-    document.getElementById('stat-quarterly').innerText = quarterlies.length;
+    // Filters
+    const searchInput = document.getElementById('search-input');
+    const searchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    
+    const filterSelect = document.getElementById('filter-owner');
+    const filterOwner = filterSelect ? filterSelect.value : '';
+
+    if (searchTerm || filterOwner) {
+        globals = globals.filter(g => {
+            const matchSearch = searchTerm ? g.name.toLowerCase().includes(searchTerm) : true;
+            const matchOwner = filterOwner ? g.owner === filterOwner : true;
+            return matchSearch && matchOwner;
+        });
+
+        // Só exibe quarterlies se passarem no filtro ou se o Global deles passou e eles não têm filtro explícito negado
+        quarterlies = quarterlies.filter(q => {
+            const matchSearch = searchTerm ? q.name.toLowerCase().includes(searchTerm) : true;
+            const matchOwner = filterOwner ? q.owner === filterOwner : true;
+            return (matchSearch && matchOwner) || globals.some(g => g.id === q.global_id);
+        });
+    }
+
+    document.getElementById('stat-globals').innerText = rawData.objectives.filter(o => o.type === 'global').length;
+    document.getElementById('stat-quarterly').innerText = rawData.objectives.filter(o => o.type === 'quarterly').length;
 
     const container = document.getElementById('global-objectives-container');
     container.innerHTML = '';
+    
+    if (globals.length === 0 && !isTvMode) {
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-16 text-center">
+                <div class="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                    <i class="ph ph-target text-3xl text-gray-500"></i>
+                </div>
+                <h3 class="text-xl font-medium text-white mb-2">Nenhum Objetivo Visualizado</h3>
+                <p class="text-gray-400 max-w-md mx-auto mb-6">Parece que ainda não há objetivos cadastrados para essa busca, ou nenhum objetivo global ainda existe.</p>
+                ${(searchTerm || filterOwner) ? '<button onclick="document.getElementById(\\'search-input\\').value=\\'\\'; document.getElementById(\\'filter-owner\\').value=\\'\\'; renderDashboard();" class="text-primary-400 hover:text-white transition underline">Limpar Filtros</button>' : '<button onclick="switchTab(\\'cadastro\\')" class="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg transition font-medium">Cadastrar Primeiro Objetivo</button>'}
+            </div>
+        `;
+    }
     
     const expandControls = document.getElementById('desktop-expand-controls');
     if (expandControls) expandControls.classList.add('hidden');
@@ -1060,7 +1153,7 @@ async function processBulkImport(data) {
 
 async function postDataWithResponse(endpoint, data) {
     try {
-        const res = await fetch(`${API_URL}${endpoint}`, {
+        const res = await fetchWithAuth(`${API_URL}${endpoint}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -1074,7 +1167,7 @@ async function postDataWithResponse(endpoint, data) {
 
 async function postData(endpoint, data) {
     try {
-        await fetch(`${API_URL}${endpoint}`, {
+        await fetchWithAuth(`${API_URL}${endpoint}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -1152,7 +1245,7 @@ async function saveKRUpdate() {
     });
 
     try {
-        await fetch(`${API_URL}/krs/${activeKRId}`, {
+        await fetchWithAuth(`${API_URL}/krs/${activeKRId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -1173,7 +1266,7 @@ async function saveKRUpdate() {
 async function deleteKR(id) {
     if (!confirm("Tem certeza que deseja excluir esta KR? Todos os lançamentos serão perdidos.")) return;
     try {
-        const res = await fetch(`${API_URL}/krs/${id}`, { method: 'DELETE' });
+        const res = await fetchWithAuth(`${API_URL}/krs/${id}`, { method: 'DELETE' });
         if (res.ok) {
             showToast('✅ KR excluída.');
             fetchData();
@@ -1188,7 +1281,7 @@ async function deleteKR(id) {
 async function deleteObjective(id) {
     if (!confirm("Atenção! Excluir este objetivo também excluirá todas as KRs vinculadas e eventuais KRs em trimestres abaixo dele. Deseja continuar?")) return;
     try {
-        const res = await fetch(`${API_URL}/objectives/${id}`, { method: 'DELETE' });
+        const res = await fetchWithAuth(`${API_URL}/objectives/${id}`, { method: 'DELETE' });
         if (res.ok) {
             showToast('✅ Objetivo excluído com sucesso.');
             fetchData();
@@ -1241,7 +1334,7 @@ async function saveEditKRConfig() {
     }
 
     try {
-        const res = await fetch(`${API_URL}/krs/${editingKRConfigId}`, {
+        const res = await fetchWithAuth(`${API_URL}/krs/${editingKRConfigId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -1293,7 +1386,7 @@ async function saveEditObj() {
     }
 
     try {
-        const res = await fetch(`${API_URL}/objectives/${editingObjId}`, {
+        const res = await fetchWithAuth(`${API_URL}/objectives/${editingObjId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -1369,7 +1462,7 @@ async function saveAddKRExisting() {
     }
 
     try {
-        const res = await fetch(`${API_URL}/krs`, {
+        const res = await fetchWithAuth(`${API_URL}/krs`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
