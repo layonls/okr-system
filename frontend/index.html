@@ -108,6 +108,28 @@
             transition: transform 0.3s ease;
         }
         
+        /* Hierarchy Tree lines */
+        .tree-line-v {
+            position: absolute;
+            left: -1rem;
+            top: -1.5rem;
+            bottom: 50%;
+            width: 2px;
+            background-color: rgba(59, 130, 246, 0.2);
+            pointer-events: none;
+            z-index: 0;
+        }
+        .tree-line-h {
+            position: absolute;
+            left: -1rem;
+            top: 50%;
+            width: 1rem;
+            height: 2px;
+            background-color: rgba(59, 130, 246, 0.2);
+            pointer-events: none;
+            z-index: 0;
+        }
+
         /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #0a1628; }
@@ -471,9 +493,39 @@
             <div class="grid grid-cols-4 gap-4 mb-6" id="months-grid">
                 <!-- Injected via JS -->
             </div>
+
+            <!-- New fields for Checkin history -->
+            <div class="mb-4">
+                <label class="block text-gray-400 text-sm mb-2">Comentário de Status <span class="text-xs text-gray-500">(Opcional)</span></label>
+                <textarea id="kr-update-comment" class="w-full bg-gray-900 border border-gray-700 text-white rounded-lg p-3 focus:border-primary-500 outline-none transition resize-none" rows="2" placeholder="O que aconteceu esse mês?"></textarea>
+            </div>
             
-            <button onclick="saveKRUpdate()" class="w-full py-3 rounded-lg bg-primary-600 hover:bg-primary-500 text-white font-medium transition">
-                Salvar Atualização
+            <div class="mb-6">
+                <label class="block text-gray-400 text-sm mb-2">Nível de Confiança <span class="text-xs text-gray-500">(Probabilidade de sucesso)</span></label>
+                <div class="grid grid-cols-3 gap-3">
+                    <label class="cursor-pointer">
+                        <input type="radio" name="kr-update-confidence" value="green" class="peer hidden" checked>
+                        <div class="text-center py-2 px-3 rounded-lg border border-gray-700 bg-gray-900 peer-checked:border-green-500 peer-checked:bg-green-500/20 text-gray-400 peer-checked:text-green-400 transition font-medium text-sm flex items-center justify-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span> No Prazo
+                        </div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="kr-update-confidence" value="yellow" class="peer hidden">
+                        <div class="text-center py-2 px-3 rounded-lg border border-gray-700 bg-gray-900 peer-checked:border-yellow-500 peer-checked:bg-yellow-500/20 text-gray-400 peer-checked:text-yellow-400 transition font-medium text-sm flex items-center justify-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-yellow-500"></span> Em Risco
+                        </div>
+                    </label>
+                    <label class="cursor-pointer">
+                        <input type="radio" name="kr-update-confidence" value="red" class="peer hidden">
+                        <div class="text-center py-2 px-3 rounded-lg border border-gray-700 bg-gray-900 peer-checked:border-red-500 peer-checked:bg-red-500/20 text-gray-400 peer-checked:text-red-400 transition font-medium text-sm flex items-center justify-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Crítico
+                        </div>
+                    </label>
+                </div>
+            </div>
+            
+            <button id="btn-save-kr-update" onclick="saveKRUpdate()" class="w-full py-3 rounded-lg bg-primary-600 hover:bg-primary-500 text-white font-medium transition flex items-center justify-center gap-2">
+                <i class="ph ph-floppy-disk text-lg"></i> <span>Salvar Atualização</span>
             </button>
         </div>
     </div>
@@ -604,7 +656,7 @@
     </div>
 
     <!-- Application Script -->
-    <script src="./app.js?v=3.0"></script>
+    <script src="./app.js?v=3.1"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";

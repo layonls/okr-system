@@ -741,8 +741,22 @@ function renderKRChart(canvasId, kr, validMonths) {
                     tension: 0.4,
                     fill: true,
                     spanGaps: true,
-                    pointRadius: 4,
-                    pointBackgroundColor: '#3498db'
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    pointBackgroundColor: dataPoints.map((val, idx) => {
+                        if (val === null) return '#3498db'; // Not filled
+                        const month = validMonths[idx];
+                        // Procura no histório se existe checkin para este mês ou usa o fallback
+                        if (kr.checkins && kr.checkins.length > 0) {
+                            const found = kr.checkins.slice().reverse().find(c => c.month === month);
+                            if (found) {
+                                if (found.confidence_score === 'green') return '#22c55e'; // green-500
+                                if (found.confidence_score === 'yellow') return '#eab308'; // yellow-500
+                                if (found.confidence_score === 'red') return '#ef4444'; // red-500
+                            }
+                        }
+                        return '#3498db';
+                    })
                 },
                 {
                     label: 'Meta',
@@ -1216,6 +1230,15 @@ function openKRModal(krId) {
         grid.appendChild(wrap);
     });
 
+    document.getElementById('kr-update-comment').value = '';
+    const latestCheckin = kr.checkins && kr.checkins.length > 0 ? kr.checkins[kr.checkins.length - 1] : null;
+    if (latestCheckin && latestCheckin.confidence_score) {
+        const radio = document.querySelector(`input[name="kr-update-confidence"][value="${latestCheckin.confidence_score}"]`);
+        if (radio) radio.checked = true;
+    } else {
+        document.querySelector(`input[name="kr-update-confidence"][value="green"]`).checked = true;
+    }
+
     document.getElementById('modal-update-kr').classList.remove('hidden');
     document.getElementById('modal-update-kr').classList.add('flex');
 }
@@ -1244,6 +1267,22 @@ async function saveKRUpdate() {
         }
     });
 
+    const comment = document.getElementById('kr-update-comment').value;
+    const confidenceNode = document.querySelector('input[name="kr-update-confidence"]:checked');
+    const confidence = confidenceNode ? confidenceNode.value : 'green';
+
+    const checkins = kr.checkins ? [...kr.checkins] : [];
+    checkins.push({
+        date: new Date().toISOString(),
+        comment: comment,
+        confidence_score: confidence,
+        month: validMonths.slice().reverse().find(m => payload[m] !== "") || validMonths[0]
+    });
+    payload.checkins = checkins;
+
+    const btn = document.getElementById('btn-save-kr-update');
+    btn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> <span>Salvando...</span>';
+
     try {
         await fetchWithAuth(`${API_URL}/krs/${activeKRId}`, {
             method: 'PUT',
@@ -1256,6 +1295,9 @@ async function saveKRUpdate() {
     } catch (e) {
         console.error(e);
         alert("Erro ao salvar dados.");
+    } finally {
+        const btn = document.getElementById('btn-save-kr-update');
+        if (btn) btn.innerHTML = '<i class="ph ph-floppy-disk text-lg"></i> <span>Salvar Atualização</span>';
     }
 }
 
