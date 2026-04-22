@@ -1,176 +1,191 @@
-import http.server
-import socketserver
-import json
 import os
+import uvicorn
+from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from sqlmodel import Session, select
+from typing import List, Dict, Any
 
-PORT = 80
+import firebase_admin
+from firebase_admin import credentials, auth
+
+from database import create_db_and_tables, get_session
+from models import Objective, KeyResult
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Firebase initialization
+FIREBASE_CREDENTIALS = os.environ.get("FIREBASE_CREDENTIALS", None)
+if FIREBASE_CREDENTIALS and not getattr(firebase_admin, '_apps', None):
+    try:
+        if os.path.exists(FIREBASE_CREDENTIALS):
+            cred = credentials.Certificate(FIREBASE_CREDENTIALS)
+        else:
+            # Maybe it's a JSON string
+            import json
+            cred = credentials.Certificate(json.loads(FIREBASE_CREDENTIALS))
+        firebase_admin.initialize_app(cred)
+    except Exception as e:
+        print(f"Firebase Init Error: {e}")
+
+async def verify_token(request: Request):
+    if not FIREBASE_CREDENTIALS:
+        return None # If no credentials provided, bypass for dev/testing
+        
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        raise HTTPException(status_code=401, detail="Token missing or invalid")
+    token = auth_header.split(' ')[1]
+    try:
+        decoded_token = auth.verify_id_token(token)
+        return decoded_token
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Invalid Token: {str(e)}")
+
+from migrate_db import migrate
+
+@app.on_event("startup")
+def on_startup():
+    print("Iniciando banco de dados...")
+    create_db_and_tables()
+    print("Verificando necessidade de migração...")
+    migrate()
+
+@app.get("/api/data")
+def get_data(session: Session = Depends(get_session)):
+    objectives = session.exec(select(Objective)).all()
+    krs = session.exec(select(KeyResult)).all()
+    
+    return {
+        "objectives": [obj.dict() for obj in objectives],
+        "key_results": [kr.dict() for kr in krs]
+    }
+
+@app.post("/api/objectives", status_code=201)
+def create_objective(obj: Dict[str, Any], session: Session = Depends(get_session), user=Depends(verify_token)):
+    # Simple ID generation mimicking previous behavior
+    count = session.query(Objective).count()
+    new_id = str(count + 1)
+    
+    new_obj = Objective(
+        id=new_id,
+        name=obj.get("name"),
+        type=obj.get("type"),
+        owner=obj.get("owner", ""),
+        global_id=obj.get("global_id", ""),
+        quarter=obj.get("quarter", "")
+    )
+    session.add(new_obj)
+    session.commit()
+    session.refresh(new_obj)
+    return new_obj
+
+@app.put("/api/objectives/{obj_id}")
+def update_objective(obj_id: str, updates: Dict[str, Any], session: Session = Depends(get_session), user=Depends(verify_token)):
+    obj = session.get(Objective, obj_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="Objective not found")
+        
+    for k, v in updates.items():
+        if hasattr(obj, k):
+            setattr(obj, k, v)
+            
+    session.add(obj)
+    session.commit()
+    return {"status": "success"}
+
+@app.delete("/api/objectives/{obj_id}")
+def delete_objective(obj_id: str, session: Session = Depends(get_session), user=Depends(verify_token)):
+    obj = session.get(Objective, obj_id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="Objective not found")
+    
+    session.delete(obj)
+    
+    # Cascading deletes logically matching old code
+    krs = session.exec(select(KeyResult).where(
+        (KeyResult.global_id == obj_id) | (KeyResult.quarterly_id == obj_id)
+    )).all()
+    for kr in krs:
+        session.delete(kr)
+        
+    sub_objs = session.exec(select(Objective).where(Objective.global_id == obj_id)).all()
+    for so in sub_objs:
+        session.delete(so)
+        
+    session.commit()
+    return {"status": "deleted"}
+
+@app.post("/api/krs", status_code=201)
+def create_kr(kr_data: Dict[str, Any], session: Session = Depends(get_session), user=Depends(verify_token)):
+    count = session.query(KeyResult).count()
+    new_id = str(count + 1)
+    
+    new_kr = KeyResult(
+        id=new_id,
+        name=kr_data.get("name"),
+        measurement=kr_data.get("measurement", "increase"),
+        base_value=kr_data.get("base_value", "0"),
+        target_value=kr_data.get("target_value", "0"),
+        global_id=kr_data.get("global_id", ""),
+        quarterly_id=kr_data.get("quarterly_id", ""),
+        Jan=kr_data.get("Jan", ""),
+        Feb=kr_data.get("Feb", ""),
+        Mar=kr_data.get("Mar", ""),
+        Apr=kr_data.get("Apr", ""),
+        May=kr_data.get("May", ""),
+        Jun=kr_data.get("Jun", ""),
+        Jul=kr_data.get("Jul", ""),
+        Aug=kr_data.get("Aug", ""),
+        Sep=kr_data.get("Sep", ""),
+        Oct=kr_data.get("Oct", ""),
+        Nov=kr_data.get("Nov", ""),
+        Dec=kr_data.get("Dec", "")
+    )
+    session.add(new_kr)
+    session.commit()
+    session.refresh(new_kr)
+    return new_kr
+
+@app.put("/api/krs/{kr_id}")
+def update_kr(kr_id: str, updates: Dict[str, Any], session: Session = Depends(get_session), user=Depends(verify_token)):
+    kr = session.get(KeyResult, kr_id)
+    if not kr:
+        raise HTTPException(status_code=404, detail="KeyResult not found")
+        
+    for k, v in updates.items():
+        if hasattr(kr, k):
+            setattr(kr, k, v)
+            
+    if "checkins" in updates:
+        kr.checkins = updates['checkins']
+
+    session.add(kr)
+    session.commit()
+    return {"status": "success"}
+
+@app.delete("/api/krs/{kr_id}")
+def delete_kr(kr_id: str, session: Session = Depends(get_session), user=Depends(verify_token)):
+    kr = session.get(KeyResult, kr_id)
+    if not kr:
+        raise HTTPException(status_code=404, detail="KeyResult not found")
+        
+    session.delete(kr)
+    session.commit()
+    return {"status": "deleted"}
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_DIR = os.path.join(os.path.dirname(BASE_DIR), "frontend")
+app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
 
-# O volume será montado neste diretório de data
-DATA_DIR = os.path.join(os.path.dirname(BASE_DIR), "data")
-os.makedirs(DATA_DIR, exist_ok=True)
-DB_FILE = os.path.join(DATA_DIR, "db.json")
-
-def load_data():
-    if not os.path.exists(DB_FILE):
-        return {"objectives": [], "key_results": []}
-    with open(DB_FILE, "r") as f:
-        return json.load(f)
-
-def save_data(data):
-    with open(DB_FILE, "w") as f:
-        json.dump(data, f, indent=4)
-
-class RequestHandler(http.server.SimpleHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=FRONTEND_DIR, **kwargs)
-
-    def end_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
-        self.send_header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        super().end_headers()
-
-    def do_OPTIONS(self):
-        self.send_response(200, "ok")
-        self.end_headers()
-
-    def do_GET(self):
-        if self.path == '/api/data':
-            data = load_data()
-            self.send_response(200)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps(data).encode())
-        elif self.path.startswith('/api/'):
-            self.send_response(404)
-            self.end_headers()
-        else:
-            super().do_GET()
-
-    def do_POST(self):
-        content_length = int(self.headers.get('Content-Length', 0))
-        post_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
-        body = json.loads(post_data.decode('utf-8'))
-        
-        data = load_data()
-
-        if self.path == '/api/objectives':
-            new_id = str(len(data['objectives']) + 1)
-            body['id'] = new_id
-            data['objectives'].append(body)
-            save_data(data)
-            
-            self.send_response(201)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps(body).encode())
-            
-        elif self.path == '/api/krs':
-            new_id = str(len(data['key_results']) + 1)
-            body['id'] = new_id
-            
-            months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-            for m in months:
-                if m not in body:
-                    body[m] = ""
-                    
-            data['key_results'].append(body)
-            save_data(data)
-            
-            self.send_response(201)
-            self.send_header('Content-type', 'application/json')
-            self.end_headers()
-            self.wfile.write(json.dumps(body).encode())
-        else:
-            self.send_response(404)
-            self.end_headers()
-
-    def do_PUT(self):
-        content_length = int(self.headers.get('Content-Length', 0))
-        put_data = self.rfile.read(content_length) if content_length > 0 else b'{}'
-        body = json.loads(put_data.decode('utf-8'))
-
-        data = load_data()
-
-        if self.path.startswith('/api/krs/'):
-            kr_id = self.path.split('/')[-1]
-            found = False
-            for i, kr in enumerate(data['key_results']):
-                if kr['id'] == kr_id:
-                    data['key_results'][i].update(body)
-                    found = True
-                    break
-            if found:
-                save_data(data)
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({"status": "success"}).encode())
-            else:
-                self.send_response(404)
-                self.end_headers()
-                
-        elif self.path.startswith('/api/objectives/'):
-            obj_id = self.path.split('/')[-1]
-            found = False
-            for i, obj in enumerate(data['objectives']):
-                if obj['id'] == obj_id:
-                    data['objectives'][i].update(body)
-                    found = True
-                    break
-            if found:
-                save_data(data)
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({"status": "success"}).encode())
-            else:
-                self.send_response(404)
-                self.end_headers()
-        else:
-            self.send_response(404)
-            self.end_headers()
-
-    def do_DELETE(self):
-        data = load_data()
-        
-        if self.path.startswith('/api/krs/'):
-            kr_id = self.path.split('/')[-1]
-            original_len = len(data['key_results'])
-            data['key_results'] = [k for k in data['key_results'] if str(k.get('id', '')) != kr_id]
-            
-            if len(data['key_results']) < original_len:
-                save_data(data)
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({"status": "deleted"}).encode())
-            else:
-                self.send_response(404)
-                self.end_headers()
-                
-        elif self.path.startswith('/api/objectives/'):
-            obj_id = self.path.split('/')[-1]
-            original_len = len(data['objectives'])
-            data['objectives'] = [o for o in data['objectives'] if str(o.get('id', '')) != obj_id]
-            data['key_results'] = [k for k in data['key_results'] if str(k.get('global_id', '')) != obj_id and str(k.get('quarterly_id', '')) != obj_id]
-            data['objectives'] = [o for o in data['objectives'] if str(o.get('global_id', '')) != obj_id]
-            
-            if len(data['objectives']) < original_len:
-                save_data(data)
-                self.send_response(200)
-                self.send_header('Content-type', 'application/json')
-                self.end_headers()
-                self.wfile.write(json.dumps({"status": "deleted"}).encode())
-            else:
-                self.send_response(404)
-                self.end_headers()
-        else:
-            self.send_response(404)
-            self.end_headers()
-
-with socketserver.TCPServer(("0.0.0.0", PORT), RequestHandler) as httpd:
-    print("Serving on port", PORT)
-    httpd.serve_forever()
+if __name__ == "__main__":
+    uvicorn.run("server:app", host="0.0.0.0", port=80, reload=True)

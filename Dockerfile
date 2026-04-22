@@ -2,13 +2,12 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Copy the whole project
+COPY backend/requirements.txt ./backend/requirements.txt
+RUN pip install --no-cache-dir -r backend/requirements.txt
+
 COPY . .
 
-# Expose port (Cloud providers / Coolify typically use 80, but Coolify maps it dynamically)
-# Wait, we need to run it from backend directory or ensure module paths match.
-# In server.py we used __file__ so it should be fine.
-
+# Expose port
 EXPOSE 80
 
-CMD ["python", "backend/server.py"]
+CMD ["uvicorn", "server:app", "--app-dir", "backend", "--host", "0.0.0.0", "--port", "80"]
