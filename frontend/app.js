@@ -807,7 +807,7 @@ function renderKRChart(canvasId, kr, validMonths) {
                 y: { display: false, min: kr.measurement === 'decrease' ? parseFloat(kr.target_value) * 0.5 : 0 }
             },
             interaction: { mode: 'nearest', axis: 'x', intersect: false },
-            layout: { padding: 0 }
+            layout: { padding: { top: 8, bottom: 8, left: 6, right: 6 } }
         }
     });
 }
