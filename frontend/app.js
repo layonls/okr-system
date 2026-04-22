@@ -288,7 +288,7 @@ function renderDashboard() {
                 const expected = parentObj ? getObjectiveExpectedProgress(parentObj) : 0;
                 const krStatusHtml = krData.progress >= (expected - 5)
                     ? `<span class="bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded text-[9px] flex items-center gap-0.5 font-bold whitespace-nowrap mt-0.5"><i class="ph ph-check-circle"></i> No Prazo</span>`
-                    : `<span class="bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded text-[9px] flex items-center gap-0.5 font-bold whitespace-nowrap mt-0.5"><i class="ph ph-warning-circle"></i> Atrasado</span>`;
+                    : `<span class="bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded text-[9px] flex items-center gap-0.5 font-bold whitespace-nowrap mt-0.5"><i class="ph ph-warning-circle"></i> Atrasado (Esp: ${expected.toFixed(0)}%)</span>`;
 
                 return `
                 <div class="bg-gray-800/60 border border-gray-700/40 rounded px-2.5 py-1.5 mb-1.5 hover:border-gray-500 transition shadow-sm flex flex-row items-center gap-3">
@@ -333,7 +333,7 @@ function renderDashboard() {
                 const expectedGlobal = getObjectiveExpectedProgress(globalObj);
                 const globalTvStatus = progress >= (expectedGlobal - 5)
                     ? `<span class="bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded text-[10px] font-medium border border-green-500/30 flex items-center gap-1 shadow-sm"><i class="ph ph-check-circle"></i> No Prazo</span>`
-                    : `<span class="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded text-[10px] font-medium border border-red-500/30 flex items-center gap-1 shadow-sm"><i class="ph ph-warning-circle"></i> Atrasado</span>`;
+                    : `<span class="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded text-[10px] font-medium border border-red-500/30 flex items-center gap-1 shadow-sm"><i class="ph ph-warning-circle"></i> Atrasado (Esp: ${expectedGlobal.toFixed(0)}%)</span>`;
 
                 const card = document.createElement('div');
                 card.className = 'bg-gray-900/90 rounded-lg border border-gray-700/80 overflow-hidden shadow-2xl flex flex-col h-full ring-1 ring-white/5 min-h-0';
@@ -376,7 +376,7 @@ function renderDashboard() {
                 const expectedQ = getObjectiveExpectedProgress(qObj);
                 const qTvStatus = progress >= (expectedQ - 5)
                     ? `<span class="bg-green-500/20 text-green-300 px-1.5 py-0.5 rounded text-[10px] font-medium border border-green-500/30 flex items-center gap-1 shadow-sm"><i class="ph ph-check-circle"></i> No Prazo</span>`
-                    : `<span class="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded text-[10px] font-medium border border-red-500/30 flex items-center gap-1 shadow-sm"><i class="ph ph-warning-circle"></i> Atrasado</span>`;
+                    : `<span class="bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded text-[10px] font-medium border border-red-500/30 flex items-center gap-1 shadow-sm"><i class="ph ph-warning-circle"></i> Atrasado (Esp: ${expectedQ.toFixed(0)}%)</span>`;
 
                 const card = document.createElement('div');
                 card.className = 'bg-gray-900/90 rounded-lg border border-gray-700/80 overflow-hidden shadow-2xl flex flex-col h-full ring-1 ring-white/5 min-h-0';
@@ -430,7 +430,7 @@ function renderDashboard() {
         const expectedGlobal = getObjectiveExpectedProgress(globalObj);
         const globalStatusHtml = globalAvgProgress >= (expectedGlobal - 5)
             ? `<span class="bg-green-500/20 border border-green-500/30 text-green-400 text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 mt-0.5" title="Progresso esperado linear: ${expectedGlobal.toFixed(1)}%"><i class="ph ph-check-circle"></i> No Prazo</span>`
-            : `<span class="bg-red-500/20 border border-red-500/30 text-red-400 text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 mt-0.5" title="Progresso esperado linear: ${expectedGlobal.toFixed(1)}%"><i class="ph ph-warning-circle"></i> Atrasado</span>`;
+            : `<span class="bg-red-500/20 border border-red-500/30 text-red-400 text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 mt-0.5" title="Progresso esperado linear: ${expectedGlobal.toFixed(1)}%"><i class="ph ph-warning-circle"></i> Atrasado (Esp: ${expectedGlobal.toFixed(0)}%)</span>`;
 
         const card = document.createElement('div');
         card.className = 'glass-card rounded-2xl overflow-hidden border border-gray-700/50 mb-6 group/gobj';
@@ -510,7 +510,7 @@ function renderDashboard() {
             const expectedQuarterly = getObjectiveExpectedProgress(qObj);
             const quarterStatusHtml = qProgress >= (expectedQuarterly - 5)
                 ? `<span class="bg-green-500/20 border border-green-500/30 text-green-400 text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1" title="Progresso esperado linear: ${expectedQuarterly.toFixed(1)}%"><i class="ph ph-check-circle"></i> No Prazo</span>`
-                : `<span class="bg-red-500/20 border border-red-500/30 text-red-400 text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1" title="Progresso esperado linear: ${expectedQuarterly.toFixed(1)}%"><i class="ph ph-warning-circle"></i> Atrasado</span>`;
+                : `<span class="bg-red-500/20 border border-red-500/30 text-red-400 text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1" title="Progresso esperado linear: ${expectedQuarterly.toFixed(1)}%"><i class="ph ph-warning-circle"></i> Atrasado (Esp: ${expectedQuarterly.toFixed(0)}%)</span>`;
 
 
             const qSection = document.createElement('div');
@@ -575,7 +575,7 @@ function renderKRListHtml(krs) {
         const expected = parentObj ? getObjectiveExpectedProgress(parentObj) : 0;
         const krStatusHtml = krData.progress >= (expected - 5)
             ? `<span class="bg-green-500/20 border border-green-500/30 text-green-400 text-[10px] px-1.5 py-0.5 rounded-md flex items-center gap-1 mt-0.5 whitespace-nowrap" title="Progresso esperado: ${expected.toFixed(1)}%"><i class="ph ph-check-circle"></i> No Prazo</span>`
-            : `<span class="bg-red-500/20 border border-red-500/30 text-red-400 text-[10px] px-1.5 py-0.5 rounded-md flex items-center gap-1 mt-0.5 whitespace-nowrap" title="Progresso esperado: ${expected.toFixed(1)}%"><i class="ph ph-warning-circle"></i> Atrasado</span>`;
+            : `<span class="bg-red-500/20 border border-red-500/30 text-red-400 text-[10px] px-1.5 py-0.5 rounded-md flex items-center gap-1 mt-0.5 whitespace-nowrap" title="Progresso esperado: ${expected.toFixed(1)}%"><i class="ph ph-warning-circle"></i> Atrasado (Esp: ${expected.toFixed(0)}%)</span>`;
 
         return `
         <div class="bg-gray-800/80 border border-gray-700/50 rounded-xl p-4 hover:border-gray-500 transition flex flex-row items-center gap-4 mb-3 group/kr">
