@@ -416,8 +416,8 @@ function renderDashboard() {
                         </div>
                     </div>
                     
-                    <div class="w-16 lg:w-24 shrink-0 flex flex-col justify-center self-stretch">
-                        <div class="w-full h-8 opacity-80"><canvas id="chart-kr-${kr.id}"></canvas></div>
+                    <div class="w-16 lg:w-24 shrink-0 flex flex-col justify-center self-stretch pt-1">
+                        <div class="w-full h-10 opacity-80"><canvas id="chart-kr-${kr.id}"></canvas></div>
                         <div class="w-full bg-gray-900 border border-gray-700/50 rounded-full h-1 mt-1 overflow-hidden shrink-0">
                             <div class="bg-primary-500 h-full rounded-full" style="width: ${Math.min(krData.progress, 100)}%"></div>
                         </div>
@@ -755,8 +755,8 @@ function renderKRChart(canvasId, kr, validMonths) {
                     tension: 0.4,
                     fill: true,
                     spanGaps: true,
-                    pointRadius: 6,
-                    pointHoverRadius: 8,
+                    pointRadius: isTvMode ? 3 : 6,
+                    pointHoverRadius: isTvMode ? 5 : 8,
                     pointBackgroundColor: dataPoints.map((val, idx) => {
                         if (val === null) return '#3498db'; // Not filled
                         const month = validMonths[idx];
