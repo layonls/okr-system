@@ -57,6 +57,21 @@ from migrate_db import migrate
 def on_startup():
     print("Iniciando banco de dados...")
     create_db_and_tables()
+    
+    from sqlmodel import text
+    from database import engine
+    with engine.begin() as conn:
+        try:
+            conn.execute(text("ALTER TABLE keyresult ADD COLUMN calculation VARCHAR DEFAULT 'sum'"))
+            print("Colunas calculation adicionada com sucesso.")
+        except Exception:
+            pass
+        try:
+            conn.execute(text("ALTER TABLE keyresult ADD COLUMN frequency VARCHAR DEFAULT 'monthly'"))
+            print("Colunas frequency adicionada com sucesso.")
+        except Exception:
+            pass
+
     print("Verificando necessidade de migração...")
     migrate()
 

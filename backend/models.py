@@ -14,6 +14,8 @@ class KeyResult(SQLModel, table=True):
     id: str = Field(primary_key=True)
     name: str
     measurement: str
+    calculation: Optional[str] = "sum"
+    frequency: Optional[str] = "monthly"
     base_value: str
     target_value: str
     global_id: Optional[str] = ""

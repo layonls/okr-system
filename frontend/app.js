@@ -205,9 +205,10 @@ function calculateKRProgress(kr) {
 
     let current = base;
     if (values.length > 0) {
-        if (kr.calculation === 'sum') {
+        const calc = kr.calculation || 'sum';
+        if (calc === 'sum') {
             current = values.reduce((a, b) => a + b, 0);
-        } else if (kr.calculation === 'avg') {
+        } else if (calc === 'avg') {
             current = values.reduce((a, b) => a + b, 0) / values.length;
         }
     } else {
