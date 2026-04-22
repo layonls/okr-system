@@ -136,6 +136,19 @@ async function fetchData(silent = false) {
         const response = await fetchWithAuth(`${API_URL}/data`);
         if (response.ok) {
             rawData = await response.json();
+            
+            // Garantir que checkins seja Array (SQLite pode retornar JSON string)
+            if (rawData.key_results) {
+                rawData.key_results.forEach(kr => {
+                    if (typeof kr.checkins === 'string') {
+                        try { kr.checkins = JSON.parse(kr.checkins); } catch(e) { kr.checkins = []; }
+                    }
+                    if (!kr.checkins || !Array.isArray(kr.checkins)) {
+                        kr.checkins = [];
+                    }
+                });
+            }
+
             populateOwnerFilter();
             renderDashboard();
             populateSelects();
