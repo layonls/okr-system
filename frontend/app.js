@@ -359,7 +359,7 @@ function renderDashboard() {
                 </div>
                 <h3 class="text-xl font-medium text-white mb-2">Nenhum Objetivo Visualizado</h3>
                 <p class="text-gray-400 max-w-md mx-auto mb-6">Parece que ainda não há objetivos cadastrados para essa busca, ou nenhum objetivo global ainda existe.</p>
-                ${(searchTerm || filterOwner) ? '<button onclick="document.getElementById(\\'search-input\\').value=\\'\\'; document.getElementById(\\'filter-owner\\').value=\\'\\'; renderDashboard();" class="text-primary-400 hover:text-white transition underline">Limpar Filtros</button>' : '<button onclick="switchTab(\\'cadastro\\')" class="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg transition font-medium">Cadastrar Primeiro Objetivo</button>'}
+                ${(searchTerm || filterOwner) ? '<button onclick="document.getElementById(\'search-input\').value=\'\'; document.getElementById(\'filter-owner\').value=\'\'; renderDashboard();" class="text-primary-400 hover:text-white transition underline">Limpar Filtros</button>' : '<button onclick="switchTab(\'cadastro\')" class="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg transition font-medium">Cadastrar Primeiro Objetivo</button>'}
             </div>
         `;
     }
