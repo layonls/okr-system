@@ -1,4 +1,5 @@
 import os
+import uuid
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -87,9 +88,7 @@ def get_data(session: Session = Depends(get_session)):
 
 @app.post("/api/objectives", status_code=201)
 def create_objective(obj: Dict[str, Any], session: Session = Depends(get_session), user=Depends(verify_token)):
-    # Simple ID generation mimicking previous behavior
-    count = session.query(Objective).count()
-    new_id = str(count + 1)
+    new_id = str(uuid.uuid4())
     
     new_obj = Objective(
         id=new_id,
@@ -142,13 +141,14 @@ def delete_objective(obj_id: str, session: Session = Depends(get_session), user=
 
 @app.post("/api/krs", status_code=201)
 def create_kr(kr_data: Dict[str, Any], session: Session = Depends(get_session), user=Depends(verify_token)):
-    count = session.query(KeyResult).count()
-    new_id = str(count + 1)
+    new_id = str(uuid.uuid4())
     
     new_kr = KeyResult(
         id=new_id,
         name=kr_data.get("name"),
         measurement=kr_data.get("measurement", "increase"),
+        calculation=kr_data.get("calculation", "sum"),
+        frequency=kr_data.get("frequency", "monthly"),
         base_value=kr_data.get("base_value", "0"),
         target_value=kr_data.get("target_value", "0"),
         global_id=kr_data.get("global_id", ""),
