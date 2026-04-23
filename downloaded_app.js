@@ -205,10 +205,9 @@ function calculateKRProgress(kr) {
 
     let current = base;
     if (values.length > 0) {
-        const calc = kr.calculation || 'sum';
-        if (calc === 'sum') {
+        if (kr.calculation === 'sum') {
             current = values.reduce((a, b) => a + b, 0);
-        } else if (calc === 'avg') {
+        } else if (kr.calculation === 'avg') {
             current = values.reduce((a, b) => a + b, 0) / values.length;
         }
     } else {
@@ -360,7 +359,7 @@ function renderDashboard() {
                 </div>
                 <h3 class="text-xl font-medium text-white mb-2">Nenhum Objetivo Visualizado</h3>
                 <p class="text-gray-400 max-w-md mx-auto mb-6">Parece que ainda não há objetivos cadastrados para essa busca, ou nenhum objetivo global ainda existe.</p>
-                ${(searchTerm || filterOwner) ? '<button onclick="document.getElementById(\'search-input\').value=\'\'; document.getElementById(\'filter-owner\').value=\'\'; renderDashboard();" class="text-primary-400 hover:text-white transition underline">Limpar Filtros</button>' : '<button onclick="switchTab(\'cadastro\')" class="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg transition font-medium">Cadastrar Primeiro Objetivo</button>'}
+                ${(searchTerm || filterOwner) ? '<button onclick="document.getElementById(\\'search-input\\').value=\\'\\'; document.getElementById(\\'filter-owner\\').value=\\'\\'; renderDashboard();" class="text-primary-400 hover:text-white transition underline">Limpar Filtros</button>' : '<button onclick="switchTab(\\'cadastro\\')" class="bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded-lg transition font-medium">Cadastrar Primeiro Objetivo</button>'}
             </div>
         `;
     }
@@ -416,8 +415,8 @@ function renderDashboard() {
                         </div>
                     </div>
                     
-                    <div class="w-16 lg:w-24 shrink-0 flex flex-col justify-center self-stretch pt-1">
-                        <div class="w-full h-10 opacity-80"><canvas id="chart-kr-${kr.id}"></canvas></div>
+                    <div class="w-16 lg:w-24 shrink-0 flex flex-col justify-center self-stretch">
+                        <div class="w-full h-8 opacity-80"><canvas id="chart-kr-${kr.id}"></canvas></div>
                         <div class="w-full bg-gray-900 border border-gray-700/50 rounded-full h-1 mt-1 overflow-hidden shrink-0">
                             <div class="bg-primary-500 h-full rounded-full" style="width: ${Math.min(krData.progress, 100)}%"></div>
                         </div>
@@ -606,37 +605,7 @@ function renderDashboard() {
         }
 
         // 2. Renderizar KRs Trimestrais
-        let qObjs = quarterlies.filter(q => q.global_id === globalObj.id);
-        
-        // Sort qObjs by proximity to today
-        qObjs.sort((a, b) => {
-            const getDistance = (obj) => {
-                const today = new Date();
-                const objYear = parseInt(obj.year || today.getFullYear());
-                let qStartMonth, qEndMonth;
-                switch(obj.quarter) {
-                    case 'Q1': qStartMonth = 0; qEndMonth = 2; break;
-                    case 'Q2': qStartMonth = 3; qEndMonth = 5; break;
-                    case 'Q3': qStartMonth = 6; qEndMonth = 8; break;
-                    case 'Q4': qStartMonth = 9; qEndMonth = 11; break;
-                    default: return 9999999999999;
-                }
-                const startOfQ = new Date(objYear, qStartMonth, 1);
-                const endOfQ = new Date(objYear, qEndMonth + 1, 0, 23, 59, 59);
-                
-                if (today >= startOfQ && today <= endOfQ) return 0;
-                if (today < startOfQ) return startOfQ - today;
-                return today - endOfQ;
-            };
-            const distA = getDistance(a);
-            const distB = getDistance(b);
-            if (distA === distB) {
-                // Se distâncias iguais, desempate pelo trimestre mais alto (ex: Q4 antes de Q3 se ambos mesmos dias de distância, que é raro)
-                return (b.quarter || '').localeCompare(a.quarter || '');
-            }
-            return distA - distB;
-        });
-
+        const qObjs = quarterlies.filter(q => q.global_id === globalObj.id);
         qObjs.forEach(qObj => {
             const qKRs = linkedKRs.filter(kr => kr.quarterly_id === qObj.id);
             let qProgress = 0;
@@ -698,18 +667,6 @@ function renderDashboard() {
     if (computedGlobals > 0) {
         const globalAvg = totalGlobalsProgress / computedGlobals;
         document.getElementById('stat-avg-progress').innerText = `${globalAvg.toFixed(1)}%`;
-        
-        const badgeContainer = document.getElementById('stat-avg-badge');
-        if (badgeContainer) {
-            const expectedGlobal = getObjectiveExpectedProgress({ type: 'global' });
-            badgeContainer.innerHTML = globalAvg >= (expectedGlobal - 5)
-                ? `<span class="bg-green-500/20 text-green-300 px-2 py-0.5 rounded text-[11px] font-medium border border-green-500/30 flex items-center gap-1 shadow-sm"><i class="ph ph-check-circle"></i> No Prazo</span>`
-                : `<span class="bg-red-500/20 text-red-300 px-2 py-0.5 rounded text-[11px] font-medium border border-red-500/30 flex items-center gap-1 shadow-sm"><i class="ph ph-warning-circle"></i> Atrasado (Esp: ${expectedGlobal.toFixed(0)}%)</span>`;
-        }
-    } else {
-        const badgeContainer = document.getElementById('stat-avg-badge');
-        if (badgeContainer) badgeContainer.innerHTML = '';
-        document.getElementById('stat-avg-progress').innerText = '0%';
     }
 }
 
@@ -796,10 +753,9 @@ function renderKRChart(canvasId, kr, validMonths) {
                     borderWidth: 3,
                     tension: 0.4,
                     fill: true,
-                    clip: false,
                     spanGaps: true,
-                    pointRadius: isTvMode ? 3 : 6,
-                    pointHoverRadius: isTvMode ? 5 : 8,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
                     pointBackgroundColor: dataPoints.map((val, idx) => {
                         if (val === null) return '#3498db'; // Not filled
                         const month = validMonths[idx];
@@ -847,13 +803,10 @@ function renderKRChart(canvasId, kr, validMonths) {
             },
             scales: {
                 x: { display: false },
-                y: { 
-                    display: false, 
-                    min: kr.measurement === 'decrease' ? parseFloat(kr.target_value) * 0.5 : -(Math.abs(parseFloat(kr.target_value)) * 0.15) 
-                }
+                y: { display: false, min: kr.measurement === 'decrease' ? parseFloat(kr.target_value) * 0.5 : 0 }
             },
             interaction: { mode: 'nearest', axis: 'x', intersect: false },
-            layout: { padding: { top: 8, bottom: 8, left: 6, right: 6 } }
+            layout: { padding: 0 }
         }
     });
 }
