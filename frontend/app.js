@@ -747,9 +747,14 @@ function renderKRListHtml(krs) {
                         ` : ''}
                     </div>
                     ${!isTvMode ? `
-                    <button onclick="openKRModal('${kr.id}')" class="px-3 py-2 text-xs uppercase tracking-wider bg-gray-700 hover:bg-primary-600 rounded-lg text-white font-bold transition flex items-center gap-1.5 shrink-0 ml-3">
-                        <i class="ph ph-pencil-simple"></i> Lançar
-                    </button>
+                    <div class="flex items-center gap-2 shrink-0 ml-3">
+                        <button onclick="openKRHistoryModal('${kr.id}')" class="px-3 py-2 text-xs uppercase tracking-wider bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg text-gray-300 font-bold transition flex items-center gap-1.5" title="Ver Histórico">
+                            <i class="ph ph-clock-counter-clockwise text-base"></i> <span class="hidden xl:inline">Histórico</span>
+                        </button>
+                        <button onclick="openKRModal('${kr.id}')" class="px-3 py-2 text-xs uppercase tracking-wider bg-primary-600 hover:bg-primary-500 rounded-lg text-white font-bold transition flex items-center gap-1.5" title="Atualizar Progresso">
+                            <i class="ph ph-pencil-simple text-base"></i> <span class="hidden md:inline">Lançar</span>
+                        </button>
+                    </div>
                     ` : ''}
                 </div>
                 <div class="flex flex-wrap items-center gap-2.5 text-xs text-gray-400 mt-2">
@@ -1336,7 +1341,8 @@ async function saveKRUpdate() {
         date: new Date().toISOString(),
         comment: comment,
         confidence_score: confidence,
-        month: validMonths.slice().reverse().find(m => payload[m] !== "") || validMonths[0]
+        month: validMonths.slice().reverse().find(m => payload[m] !== "") || validMonths[0],
+        updated_by: typeof window.getCurrentUserEmail === 'function' ? window.getCurrentUserEmail() : 'Sistema'
     });
     payload.checkins = checkins;
 
@@ -1581,3 +1587,88 @@ async function saveAddKRExisting() {
         showToast('❌ Erro de conexão com o servidor.', 'error');
     }
 }
+
+// ==========================================
+// FUNÇÕES DE HISTÓRICO DA KR
+// ==========================================
+
+window.openKRHistoryModal = function(krId) {
+    const kr = rawData.key_results.find(k => k.id === krId);
+    if (!kr) return;
+
+    document.getElementById('history-kr-name').innerText = kr.name;
+    const container = document.getElementById('history-container');
+    container.innerHTML = '';
+
+    if (!kr.checkins || kr.checkins.length === 0) {
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-10 text-gray-500">
+                <i class="ph ph-ghost text-4xl mb-3 opacity-50"></i>
+                <p>Nenhum lançamento registrado nesta KR ainda.</p>
+            </div>`;
+    } else {
+        // Mostrar em ordem decrescente de data
+        const reversed = [...kr.checkins].reverse();
+        reversed.forEach((chk, idx) => {
+            const d = new Date(chk.date);
+            const dataFormatada = isNaN(d) ? 'Data Desconhecida' : d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
+            
+            let colorBadge = 'bg-gray-700 text-gray-300';
+            let labelBadge = 'Sem Risco Informado';
+            if (chk.confidence_score === 'green') { colorBadge = 'bg-green-500/20 text-green-400 border border-green-500/30'; labelBadge = 'No Prazo'; }
+            if (chk.confidence_score === 'yellow') { colorBadge = 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'; labelBadge = 'Em Risco'; }
+            if (chk.confidence_score === 'red') { colorBadge = 'bg-red-500/20 text-red-400 border border-red-500/30'; labelBadge = 'Crítico'; }
+            
+            const div = document.createElement('div');
+            div.className = "bg-gray-800/60 border border-gray-700 rounded-xl p-4 md:p-5 relative overflow-hidden group";
+            
+            const author = chk.updated_by || 'S/N';
+            const cmt = chk.comment && chk.comment.trim() !== '' ? chk.comment : '<em class="text-gray-500">Nenhum comentário deixado no momento do check-in.</em>';
+            const mon = chk.month ? `Ref: ${chk.month}` : '';
+
+            // Design line connector
+            if (idx !== reversed.length - 1) {
+                const line = document.createElement('div');
+                line.className = "absolute left-[38px] top-[55px] bottom-[-20px] w-0.5 bg-gray-700 z-0 hidden md:block";
+                div.appendChild(line);
+            }
+
+            div.innerHTML += `
+                <div class="relative z-10 flex gap-4">
+                    <div class="w-10 h-10 rounded-full bg-primary-600/30 border border-primary-500/30 hidden md:flex items-center justify-center text-primary-400 shrink-0 font-bold text-sm shadow-sm backdrop-blur-sm">
+                        ${author.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-3 border-b border-gray-700/50 pb-3">
+                            <div>
+                                <h4 class="text-white font-medium text-sm mb-1 flex items-center gap-2">
+                                    <i class="ph ph-user text-gray-500 md:hidden"></i>
+                                    ${author}
+                                </h4>
+                                <p class="text-[11px] text-gray-400 flex items-center gap-2 uppercase tracking-wide">
+                                    <i class="ph ph-calendar-blank text-sm"></i> ${dataFormatada}
+                                    ${mon ? `<span class="bg-gray-700/80 text-gray-300 px-1.5 py-0.5 rounded ml-1 border border-gray-600/50">${mon}</span>` : ''}
+                                </p>
+                            </div>
+                            <div class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md ${colorBadge} shrink-0 w-fit h-fit shadow-sm">
+                                ${labelBadge}
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-300">
+                            ${cmt}
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    document.getElementById('modal-kr-history').classList.remove('hidden');
+    document.getElementById('modal-kr-history').classList.add('flex');
+};
+
+window.closeKRHistoryModal = function() {
+    document.getElementById('modal-kr-history').classList.add('hidden');
+    document.getElementById('modal-kr-history').classList.remove('flex');
+};
