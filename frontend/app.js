@@ -655,10 +655,12 @@ function renderDashboard() {
 
             let krHtml = renderKRListHtml(qKRs);
 
+            const isOpen = openQuarterlyAccordions.get(globalObj.id) === qObj.id;
+
             qSection.innerHTML = `
                 <div class="absolute top-0 left-0 w-1 h-full bg-blue-500/50"></div>
                 
-                <div class="flex flex-col md:flex-row md:items-center gap-3 mb-5 pl-2 pb-3 border-b border-gray-700/50">
+                <div class="flex flex-col md:flex-row md:items-center gap-3 mb-2 pl-2 pb-3 border-b border-gray-700/50 cursor-pointer hover:bg-white/5 transition" onclick="toggleQuarterlyAccordion('${qObj.id}', '${globalObj.id}')">
                     <div class="flex items-center gap-2 flex-wrap">
                         <span class="bg-blue-600 font-bold px-2.5 py-1 rounded text-white text-xs">${qObj.quarter}</span>
                         <h4 class="text-lg text-white font-semibold tracking-tight">${qObj.name}</h4>
@@ -672,7 +674,7 @@ function renderDashboard() {
                         </div>
                         ` : ''}
                     </div>
-                    <div class="md:ml-auto flex items-center gap-2">
+                    <div class="md:ml-auto flex items-center gap-2 pr-2">
                         <span class="text-xs text-gray-400">Progresso do Trimestre:</span>
                         <div class="flex items-center gap-2">
                             <div class="w-24 h-2 bg-gray-800 rounded-full overflow-hidden border border-gray-700">
@@ -680,9 +682,10 @@ function renderDashboard() {
                             </div>
                             <span class="text-blue-400 font-bold text-sm min-w-10">${qProgress.toFixed(1)}%</span>
                         </div>
+                        <i class="ph ph-caret-down text-gray-400 transition-transform duration-300 ml-2 qacc-icon-for-${globalObj.id}" id="qacc-icon-${qObj.id}" style="${isOpen ? 'transform: rotate(180deg)' : 'transform: rotate(0deg)'}"></i>
                     </div>
                 </div>
-                <div class="mt-4 pl-2">
+                <div id="qacc-content-${qObj.id}" class="mt-4 pl-2 qacc-content-for-${globalObj.id} ${isOpen ? '' : 'hidden'}">
                     ${krHtml || '<p class="text-gray-500 text-sm py-4 italic text-center rounded-lg border border-dashed border-gray-700 bg-gray-900/50">Nenhuma KR vinculada a este trimestre ainda.</p>'}
                 </div>
             `;
@@ -864,6 +867,30 @@ function renderKRChart(canvasId, kr, validMonths) {
 }
 
 let openAccordions = new Set();
+let openQuarterlyAccordions = new Map(); // global_id -> open_quarterly_id
+
+function toggleQuarterlyAccordion(qId, gId) {
+    const currentlyOpen = openQuarterlyAccordions.get(gId);
+    
+    if (currentlyOpen === qId) {
+        openQuarterlyAccordions.delete(gId);
+    } else {
+        openQuarterlyAccordions.set(gId, qId);
+    }
+    
+    const allQuarterlyContents = document.querySelectorAll(`.qacc-content-for-${gId}`);
+    const allQuarterlyIcons = document.querySelectorAll(`.qacc-icon-for-${gId}`);
+    
+    allQuarterlyContents.forEach(el => el.classList.add('hidden'));
+    allQuarterlyIcons.forEach(icon => icon.style.transform = 'rotate(0deg)');
+    
+    if (openQuarterlyAccordions.get(gId) === qId) {
+        const targetContent = document.getElementById(`qacc-content-${qId}`);
+        const targetIcon = document.getElementById(`qacc-icon-${qId}`);
+        if (targetContent) targetContent.classList.remove('hidden');
+        if (targetIcon) targetIcon.style.transform = 'rotate(180deg)';
+    }
+}
 
 function toggleAccordion(id) {
     const el = document.getElementById(id);
