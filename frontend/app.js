@@ -585,15 +585,25 @@ function renderDashboard() {
         const globalDirectKRs = linkedKRs.filter(kr => !kr.quarterly_id || kr.quarterly_id === "");
         if (globalDirectKRs.length > 0) {
             const gSection = document.createElement('div');
-            gSection.className = 'bg-gray-800/20 rounded-xl border border-primary-500/20 p-5 mb-8';
+            gSection.className = 'bg-gray-800/20 rounded-xl border border-primary-500/20 p-5 mb-8 relative overflow-hidden group/gkr';
             let krHtml = renderKRListHtml(globalDirectKRs);
 
+            const gkId = 'gkrs-' + globalObj.id;
+            const isGkOpen = openQuarterlyAccordions.get(globalObj.id) === gkId;
+
             gSection.innerHTML = `
-                <div class="flex items-center gap-3 mb-5 pb-3 border-b border-gray-700/50">
-                    <span class="bg-primary-600 text-white text-[10px] font-bold px-2 py-0.5 rounded tracking-wide uppercase">Global</span>
-                    <h4 class="text-base text-gray-300 font-medium tracking-tight">KRs vinculadas diretamente ao Objetivo Global</h4>
+                <div class="absolute top-0 left-0 w-1 h-full bg-primary-500/50"></div>
+                
+                <div class="flex flex-col md:flex-row md:items-center gap-3 mb-2 pl-2 pb-3 border-b border-gray-700/50 cursor-pointer hover:bg-white/5 transition" onclick="toggleQuarterlyAccordion('${gkId}', '${globalObj.id}')">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="bg-primary-600 text-white text-[10px] font-bold px-2 py-0.5 rounded tracking-wide uppercase">Global</span>
+                        <h4 class="text-base text-gray-300 font-medium tracking-tight">KRs vinculadas diretamente ao Objetivo Global</h4>
+                    </div>
+                    <div class="md:ml-auto flex items-center gap-2 pr-2">
+                        <i class="ph ph-caret-down text-gray-400 transition-transform duration-300 ml-2 qacc-icon-for-${globalObj.id}" id="qacc-icon-${gkId}" style="${isGkOpen ? 'transform: rotate(180deg)' : 'transform: rotate(0deg)'}"></i>
+                    </div>
                 </div>
-                <div class="mt-4">
+                <div id="qacc-content-${gkId}" class="mt-4 pl-2 qacc-content-for-${globalObj.id} ${isGkOpen ? '' : 'hidden'}">
                     ${krHtml}
                 </div>
             `;
